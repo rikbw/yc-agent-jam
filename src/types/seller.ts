@@ -37,6 +37,8 @@ export type SellerCompany = {
   lastContactDate: Date;
   estimatedDealSize: number; // in EUR
   likelihoodToSell: number; // 0-100
+  website?: string;
+  valuation?: number; // in EUR
   createdAt: Date;
 };
 

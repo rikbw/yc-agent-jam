@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DealStage {
+  automated_outreach
+  dealer_outreach
+  pitch_meeting_planned
+  proposal_sent
+  mandate_signed
+  deal_material_creation
+  buyer_reachouts
+  deal_negotiations
+  deal_closed
+  deal_lost
+  re_engage_later
+}
+
+enum Industry {
+  SaaS
+  E_commerce
+  Manufacturing
+  Healthcare
+  Fintech
+  Food_Beverage
+  Professional_Services
+  Technology
+  Logistics
+  Real_Estate
+}
+
+model Banker {
+  id        String          @id @default(cuid())
+  name      String
+  email     String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  sellers   SellerCompany[]
+
+  @@map("bankers")
+}
+
+model SellerCompany {
+  id                String    @id @default(cuid())
+  name              String
+  industry          Industry
+  revenue           Int
+  ebitda            Int
+  headcount         Int
+  geography         String
+  dealStage         DealStage
+  ownerBankerId     String
+  ownerBanker       Banker    @relation(fields: [ownerBankerId], references: [id])
+  lastContactDate   DateTime
+  estimatedDealSize Int
+  likelihoodToSell  Int
+  website           String?
+  valuation         Int?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("seller_companies")
+}

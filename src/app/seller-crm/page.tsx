@@ -15,9 +15,36 @@ import {
 } from "@/components/ui/sidebar";
 import { DataTable } from "@/components/tables/data-table";
 import { columns } from "./columns";
-import { mockSellers } from "@/lib/mock-data/sellers";
+import { prisma } from "@/lib/prisma";
+import { mapDbIndustryToType } from "@/lib/db-mappers";
+import type { SellerCompany, DealStage } from "@/types/seller";
 
-export default function SellerCRMPage() {
+export default async function SellerCRMPage() {
+  const sellersFromDb = await prisma.sellerCompany.findMany({
+    include: {
+      ownerBanker: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  const sellers: SellerCompany[] = sellersFromDb.map((seller) => ({
+    id: seller.id,
+    name: seller.name,
+    industry: mapDbIndustryToType(seller.industry),
+    revenue: seller.revenue,
+    ebitda: seller.ebitda,
+    headcount: seller.headcount,
+    geography: seller.geography,
+    dealStage: seller.dealStage as DealStage,
+    ownerBankerId: seller.ownerBankerId,
+    ownerBankerName: seller.ownerBanker.name,
+    lastContactDate: seller.lastContactDate,
+    estimatedDealSize: seller.estimatedDealSize,
+    likelihoodToSell: seller.likelihoodToSell,
+    createdAt: seller.createdAt,
+  }));
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -51,7 +78,7 @@ export default function SellerCRMPage() {
           </div>
           <DataTable
             columns={columns}
-            data={mockSellers}
+            data={sellers}
             searchKey="name"
             searchPlaceholder="Search companies..."
           />

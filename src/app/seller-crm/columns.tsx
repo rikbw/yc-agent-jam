@@ -3,6 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header";
+import { CompanyLogo } from "@/components/company-logo";
 import {
   SellerCompany,
   DEAL_STAGE_LABELS,
@@ -53,12 +55,17 @@ export const columns: ColumnDef<SellerCompany>[] = [
       <DataTableColumnHeader column={column} title="Company" />
     ),
     cell: ({ row }) => {
+      const company = row.original;
       return (
-        <div className="flex space-x-2">
+        <Link
+          href={`/companies/${company.id}`}
+          className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+        >
+          <CompanyLogo companyName={company.name} className="h-6 w-6" />
           <span className="max-w-[500px] truncate font-medium">
             {row.getValue("name")}
           </span>
-        </div>
+        </Link>
       );
     },
   },
