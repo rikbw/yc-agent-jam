@@ -3,6 +3,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 ## Notes
 
 - [Docs](https://docs.google.com/document/d/1hRfa8buDFTkRAlfms2eoarSlDaD2Kw4RZim3yWJmOiU/edit?tab=t.0)
+- [Vercel deployment](https://yc-agent-jam.vercel.app/)
+
 
 ## Getting Started
 

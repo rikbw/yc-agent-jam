@@ -1,12 +1,12 @@
 services:
   postgres:
     image: postgres:latest
-    container_name: ondeal-postgres
+    container_name: yc-hackaton-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ondeal
-      POSTGRES_USER: ondeal
-      POSTGRES_PASSWORD: ondeal
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
