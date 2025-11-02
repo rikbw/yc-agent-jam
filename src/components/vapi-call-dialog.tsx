@@ -14,6 +14,7 @@ import { Phone, PhoneOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createMessage, finalizeCall } from "@/lib/calls";
 import { MessageRole } from "@/generated/prisma/client";
+import { vapiSystemPrompt } from "@/lib/vapi/vapi";
 
 interface VapiCallDialogProps {
   open: boolean;
@@ -210,6 +211,12 @@ Owner: ${companyData.ownerBankerName}
 
       console.log("Starting Vapi call with company info:", companyInfo);
 
+      const systemPrompt = vapiSystemPrompt({
+        ownerBankerName: companyData.ownerBankerName,
+        companyName: companyData.name,
+        companyInfo: companyInfo,
+      });
+
       // Start the call with transient assistant configuration
       await vapiRef.current.start({
         transcriber: {
@@ -224,7 +231,7 @@ Owner: ${companyData.ownerBankerName}
           messages: [
             {
               role: "system",
-              content: `You are an AI sales assistant helping ${companyData.ownerBankerName} with a sales call regarding ${companyData.name}. Here is the company information:\n\n${companyInfo}\n\nYour goal is to help qualify this lead, understand their interest in selling, and identify any concerns or objections. Be professional, friendly, and focused on gathering information. Speak naturally with appropriate pauses. Listen carefully before responding and don't interrupt the customer.`,
+              content: systemPrompt,
             },
           ],
         },
