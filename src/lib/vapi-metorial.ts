@@ -44,7 +44,7 @@ export async function runMetorialConversation(userMessage: string) {
       })),
       model: 'gpt-4o-mini',
       client: openai,
-      maxSteps: 5
+      maxSteps: 15 // Increased to handle complex multi-step queries
     });
 
     return {
@@ -54,9 +54,16 @@ export async function runMetorialConversation(userMessage: string) {
     };
   } catch (error) {
     console.error('Metorial conversation error:', error);
+    
+    // Check if it's a max steps error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const isMaxStepsError = errorMessage.includes('Max steps') || errorMessage.includes('max steps');
+    
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: isMaxStepsError 
+        ? 'Query took too many steps to complete. Please try a simpler or more specific query.'
+        : errorMessage,
       response: ''
     };
   }

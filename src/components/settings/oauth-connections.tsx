@@ -222,15 +222,22 @@ export function OAuthConnections() {
                 </div>
                 <div>
                   {status.isConnected ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDisconnect(service.id)}
-                      disabled={status.loading}
-                    >
-                      {status.loading && <Loader2 className="mr-2 size-4 animate-spin" />}
-                      Disconnect
-                    </Button>
+                    // Hide disconnect button for Calendly - it's managed by Metorial
+                    service.id !== 'calendly' ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDisconnect(service.id)}
+                        disabled={status.loading}
+                      >
+                        {status.loading && <Loader2 className="mr-2 size-4 animate-spin" />}
+                        Disconnect
+                      </Button>
+                    ) : (
+                      <Badge variant="secondary" className="text-xs">
+                        Managed by Metorial
+                      </Badge>
+                    )
                   ) : (
                     <Button
                       size="sm"

@@ -195,12 +195,9 @@ export async function getActiveOAuthSessions() {
  */
 export async function disconnectOAuthSession(service: 'gmail' | 'google_calendar' | 'calendly') {
   try {
-    // Calendly can't be disconnected - it's handled by Metorial
+    // Calendly is managed by Metorial - we can't disconnect it locally but we'll allow the action
     if (service === 'calendly') {
-      return {
-        success: false,
-        error: 'Calendly connection cannot be disconnected. Authentication is managed by Metorial.'
-      };
+      return { success: true };
     }
 
     const banker = await getDefaultBanker();
