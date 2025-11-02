@@ -1,11 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Filter, Paperclip, UserPlus } from "lucide-react";
 import { CallsList } from "@/components/calls-list";
 import { CallActivityItem } from "@/components/call-activity-item";
 import type { Call } from "@/types/call";
@@ -15,16 +11,6 @@ interface CompanyDetailTabsProps {
   lastContactRelative: string;
   calls: Call[];
 }
-
-const getInitials = (value: string) => {
-  if (!value) return "";
-  return value
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
-};
 
 export function CompanyDetailTabs({ ownerBankerName, lastContactRelative, calls }: CompanyDetailTabsProps) {
   const router = useRouter();
@@ -96,16 +82,6 @@ export function CompanyDetailTabs({ ownerBankerName, lastContactRelative, calls 
           </TabsTrigger>
         </TabsList>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Filter className="size-4" />
-            Filters
-          </Button>
-          <Button variant="outline" size="sm">
-            <UserPlus className="size-4" />
-            Manage access
-          </Button>
-        </div>
       </div>
 
       <TabsContent value="activity" className="flex flex-1 flex-col">
@@ -129,12 +105,6 @@ export function CompanyDetailTabs({ ownerBankerName, lastContactRelative, calls 
       </TabsContent>
 
       <TabsContent value="emails" className="flex flex-1 flex-col">
-        <div className="border-b px-6 py-4 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">
-            {ownerBankerName}
-          </span>{" "}
-          updated this record {lastContactRelative}
-        </div>
         <div className="flex-1 overflow-auto">
           <div className="flex flex-1 items-center justify-center bg-muted/10 py-12 text-sm text-muted-foreground">
             No emails yet.
@@ -143,24 +113,9 @@ export function CompanyDetailTabs({ ownerBankerName, lastContactRelative, calls 
       </TabsContent>
 
       <TabsContent value="team" className="flex flex-1 flex-col px-6 pb-6">
-        <div className="flex flex-col gap-4 py-6">
-          <div className="flex items-center gap-3 bg-muted/40 p-4">
-            <Avatar className="size-10">
-              <AvatarFallback>{getInitials(ownerBankerName)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <div className="text-sm font-medium text-foreground">
-                {ownerBankerName}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Relationship owner • Added {lastContactRelative}
-              </div>
-            </div>
-          </div>
           <div className="py-10 text-center text-sm text-muted-foreground">
             Add more collaborators to keep everyone in sync.
           </div>
-        </div>
       </TabsContent>
 
       <TabsContent value="notes" className="flex flex-1 flex-col px-6 pb-6">
