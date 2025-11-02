@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { CompanyLogo } from "@/components/company-logo";
-import { CompanyCallSection } from "@/components/company-call-section";
+import type { Call } from "@/types/call";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -23,6 +23,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { prisma } from "@/lib/prisma";
 import { mapDbIndustryToType } from "@/lib/db-mappers";
+import { CompanyDetailTabs } from "@/components/company-detail-tabs";
 import {
   DEAL_STAGE_COLORS,
   DEAL_STAGE_LABELS,
@@ -31,9 +32,9 @@ import {
 import { notFound } from "next/navigation";
 import {
   ExternalLink,
-  Filter,
-  Paperclip,
-  UserPlus,
+  Plus,
+  Send,
+  Settings2,
 } from "lucide-react";
 
 interface CompanyDetailPageProps {
@@ -96,6 +97,19 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
     where: { id },
     include: {
       ownerBanker: true,
+      calls: {
+        include: {
+          banker: true,
+          messages: {
+            orderBy: {
+              timestamp: 'asc',
+            },
+          },
+        },
+        orderBy: {
+          callDate: 'desc',
+        },
+      },
     },
   });
 
@@ -138,53 +152,28 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
     year: "numeric",
   }).format(company.lastContactDate);
 
-  const emailThreads = [
-    {
-      id: "email-1",
-      subject: "Thank you for your prompt action",
-      sender: "Jordan Doe",
-      senderEmail: "j.doe@" + company.name.toLowerCase().replace(/\s+/g, "") + ".com",
-      timestamp: "5:30 PM",
-      preview: `Hi ${company.ownerBankerName.split(" ")[0]}, thank you for your swift response regarding ${company.name}'s process. Looking forward to next steps.`,
-      attachments: ["finance-overview.pdf"],
-    },
-    {
-      id: "email-2",
-      subject: "Your ticket to faraway flavors",
-      sender: "Alex Smith",
-      senderEmail: `alex.smith@${company.name.toLowerCase().replace(/\s+/g, "")}.com`,
-      timestamp: "Aug 2",
-      preview: `Sharing the latest campaign assets we discussed. Let me know how they look for your outreach.`,
-      attachments: [],
-    },
-    {
-      id: "email-3",
-      subject: "Grab a plate",
-      sender: "Nora Patel",
-      senderEmail: "n.patel@" + company.name.toLowerCase().replace(/\s+/g, "") + ".com",
-      timestamp: "Aug 1",
-      preview: `Circling back on the product mix you requested. Added a quick summary below for your review.`,
-      attachments: ["product-mix.xlsx"],
-    },
-    {
-      id: "email-4",
-      subject: "Summer Mondays",
-      sender: "Alex Smith",
-      senderEmail: `alex.smith@${company.name.toLowerCase().replace(/\s+/g, "")}.com`,
-      timestamp: "Jul 16",
-      preview: `Weekly digest with top-line metrics and notes from the Monday sync.`,
-      attachments: [],
-    },
-    {
-      id: "email-5",
-      subject: "Steak + Caesar",
-      sender: "Jordan Doe",
-      senderEmail: "j.doe@" + company.name.toLowerCase().replace(/\s+/g, "") + ".com",
-      timestamp: "Jul 9",
-      preview: `Latest buyer sentiment and tasting notes attached. Highlighting a few quick wins below.`,
-      attachments: ["tasting-notes.docx"],
-    },
-  ];
+  // Transform calls data
+  const calls: Call[] = companyFromDb.calls.map((call) => ({
+    id: call.id,
+    sellerCompanyId: call.sellerCompanyId,
+    bankerId: call.bankerId,
+    bankerName: call.banker.name,
+    callDate: call.callDate,
+    duration: call.duration,
+    outcome: call.outcome as Call['outcome'],
+    notes: call.notes ?? undefined,
+    messages: call.messages.map((msg) => ({
+      id: msg.id,
+      callId: msg.callId,
+      role: msg.role as 'assistant' | 'user' | 'system',
+      transcript: msg.transcript,
+      timestamp: msg.timestamp,
+      createdAt: msg.createdAt,
+      updatedAt: msg.updatedAt,
+    })),
+    createdAt: call.createdAt,
+    updatedAt: call.updatedAt,
+  }));
 
   const recordDetailRows: { label: string; value: ReactNode }[] = [
     {
@@ -323,174 +312,30 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
                 </div>
               </div>
 
-              <CompanyCallSection companyData={company} />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm">
+                  <Plus className="size-4" />
+                  Add to List
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Settings2 className="size-4" />
+                  Run workflow
+                </Button>
+                <Button size="sm">
+                  <Send className="size-4" />
+                  Compose email
+                </Button>
+              </div>
             </div>
           </div>
 
           <div className="grid flex-1 gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
             <div className="flex min-h-[28rem] flex-col">
-              <Tabs defaultValue="emails" className="flex h-full flex-col">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b px-6 pb-3">
-                  <TabsList className="h-auto gap-3 rounded-none border-0 bg-transparent p-0">
-                    <TabsTrigger
-                      value="activity"
-                      className="rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-2 shadow-none ring-0 ring-offset-0 data-[state=active]:border-primary"
-                    >
-                      Activity
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="emails"
-                      className="rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-2 shadow-none ring-0 ring-offset-0 data-[state=active]:border-primary"
-                    >
-                      Emails
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        {emailThreads.length}
-                      </span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="team"
-                      className="rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-2 shadow-none ring-0 ring-offset-0 data-[state=active]:border-primary"
-                    >
-                      Team
-                      <span className="ml-2 text-xs text-muted-foreground">1</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="notes"
-                      className="rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-2 shadow-none ring-0 ring-offset-0 data-[state=active]:border-primary"
-                    >
-                      Notes
-                      <span className="ml-2 text-xs text-muted-foreground">0</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="tasks"
-                      className="rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-2 shadow-none ring-0 ring-offset-0 data-[state=active]:border-primary"
-                    >
-                      Tasks
-                      <span className="ml-2 text-xs text-muted-foreground">0</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="files"
-                      className="rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-2 shadow-none ring-0 ring-offset-0 data-[state=active]:border-primary"
-                    >
-                      Files
-                      <span className="ml-2 text-xs text-muted-foreground">0</span>
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <Filter className="size-4" />
-                      Filters
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <UserPlus className="size-4" />
-                      Manage access
-                    </Button>
-                  </div>
-                </div>
-
-                <TabsContent value="activity" className="flex flex-1 flex-col px-6 pb-6">
-                  <div className="flex flex-1 items-center justify-center bg-muted/10 text-sm text-muted-foreground">
-                    Activity feed coming soon.
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="emails" className="flex flex-1 flex-col">
-                  <div className="border-b px-6 py-4 text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {company.ownerBankerName}
-                    </span>{" "}
-                    updated this record {lastContactRelative}
-                  </div>
-                  <div className="flex-1 overflow-auto">
-                    <div className="divide-y">
-                      {emailThreads.map((email) => (
-                        <article
-                          key={email.id}
-                          className="flex flex-col gap-3 px-6 py-4 transition hover:bg-muted/60"
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="size-9">
-                                <AvatarFallback>{getInitials(email.sender)}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                                  <span>{email.sender}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {email.senderEmail}
-                                  </span>
-                                </div>
-                                <div className="text-xs text-muted-foreground">{email.timestamp}</div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col gap-2 pl-12">
-                            <div className="text-base font-semibold text-foreground">
-                              {email.subject}
-                            </div>
-                            <p className="text-sm leading-relaxed text-muted-foreground">
-                              {email.preview}
-                            </p>
-                            <div className="flex flex-wrap items-center gap-2">
-                              {email.attachments.map((attachment) => (
-                                <Badge
-                                  key={attachment}
-                                  variant="secondary"
-                                  className="flex items-center gap-1 rounded-full bg-muted/60 px-2 py-0.5 text-xs font-medium text-foreground"
-                                >
-                                  <Paperclip className="size-3.5" />
-                                  {attachment}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="team" className="flex flex-1 flex-col px-6 pb-6">
-                  <div className="flex flex-col gap-4 py-6">
-                    <div className="flex items-center gap-3 bg-muted/40 p-4">
-                      <Avatar className="size-10">
-                        <AvatarFallback>{getInitials(company.ownerBankerName)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="text-sm font-medium text-foreground">
-                          {company.ownerBankerName}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Relationship owner • Added {lastContactRelative}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="py-10 text-center text-sm text-muted-foreground">
-                      Add more collaborators to keep everyone in sync.
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="notes" className="flex flex-1 flex-col px-6 pb-6">
-                  <div className="flex flex-1 items-center justify-center bg-muted/10 text-sm text-muted-foreground">
-                    No notes yet. Start capturing key learnings from calls or meetings.
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="tasks" className="flex flex-1 flex-col px-6 pb-6">
-                  <div className="flex flex-1 items-center justify-center bg-muted/10 text-sm text-muted-foreground">
-                    Tasks help your team stay aligned. Create one to get started.
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="files" className="flex flex-1 flex-col px-6 pb-6">
-                  <div className="flex flex-1 items-center justify-center bg-muted/10 text-sm text-muted-foreground">
-                    File management coming soon.
-                  </div>
-                </TabsContent>
-              </Tabs>
+              <CompanyDetailTabs
+                ownerBankerName={company.ownerBankerName}
+                lastContactRelative={lastContactRelative}
+                calls={calls}
+              />
             </div>
 
             <div className="flex min-h-[28rem] flex-col">
