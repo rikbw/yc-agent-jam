@@ -6,7 +6,7 @@ import { generateObject } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { OrganizationSearchParamsSchema, OrganizationSearchParams } from "@/types/apollo";
 import { InputJsonValue } from "@prisma/client/runtime/library";
-import { searchOrganizations, searchCompaniesWithPerplexity } from "@/lib/apollo";
+import { searchOrganizations, searchCompaniesWithPerplexity, searchCompaniesWithApollo, bulkEnrichOrganizations } from "@/lib/apollo";
 import { Industry } from "@/generated/prisma/client";
 
 const openrouter = createOpenAI({
@@ -92,31 +92,91 @@ export async function searchAndSyncOrganizations(campaignId: string) {
   }
 
   // Get or create a default banker to assign companies to
-  let defaultBanker = await prisma.banker.findFirst({
+  const existingBanker = await prisma.banker.findFirst({
     orderBy: { createdAt: "asc" },
   });
 
-  if (!defaultBanker) {
-    defaultBanker = await prisma.banker.create({
-      data: {
-        name: "Default Banker",
-        email: "banker@example.com",
-      },
-    });
-  }
+  const defaultBanker = existingBanker || await prisma.banker.create({
+    data: {
+      name: "Default Banker",
+      email: "banker@example.com",
+    },
+  });
+
+  const searchParams = campaign.searchParams as OrganizationSearchParams;
+  let results;
+  let dataSource: 'apollo' | 'perplexity' = 'apollo';
 
   try {
-    // Call Perplexity via OpenRouter with the campaign's search parameters
-    const searchParams = campaign.searchParams as OrganizationSearchParams;
-    const results = await searchCompaniesWithPerplexity({
+    // Try Apollo first
+    console.log('🔍 Attempting Apollo Organization Search...');
+    results = await searchCompaniesWithApollo({
       ...searchParams,
       per_page: 25, // Limit to 25 results per sync
       page: 1,
     });
+    console.log(`✅ Apollo returned ${results.organizations.length} organizations`);
+    
+    // Enrich organizations that are missing key data
+    const domainsToEnrich = results.organizations
+      .filter(org => !org.estimated_num_employees || !org.industry || !org.city)
+      .map(org => org.primary_domain || org.website_url?.replace(/^https?:\/\//, '').split('/')[0])
+      .filter((domain): domain is string => Boolean(domain));
+    
+    if (domainsToEnrich.length > 0) {
+      console.log(`📊 Enriching ${domainsToEnrich.length} organizations with missing data...`);
+      const enrichedOrgs = await bulkEnrichOrganizations(domainsToEnrich.slice(0, 10)); // Max 10 at a time
+      
+      // Create a map of enriched orgs by domain
+      const enrichedMap = new Map(enrichedOrgs.map(org => [org.primary_domain, org]));
+      
+      // Merge enriched data back into results
+      results.organizations = results.organizations.map(org => {
+        const domain = org.primary_domain || org.website_url?.replace(/^https?:\/\//, '').split('/')[0];
+        const enriched = enrichedMap.get(domain);
+        if (enriched) {
+          return {
+            ...org,
+            industry: org.industry ?? enriched.industry,
+            estimated_num_employees: org.estimated_num_employees ?? enriched.estimated_num_employees,
+            city: org.city ?? enriched.city,
+            state: org.state ?? enriched.state,
+            country: org.country ?? enriched.country,
+            organization_revenue: org.organization_revenue ?? enriched.organization_revenue,
+            annual_revenue: org.annual_revenue ?? enriched.annual_revenue,
+          };
+        }
+        return org;
+      });
+      
+      console.log(`✅ Enriched ${enrichedOrgs.length} organizations`);
+    }
+  } catch (apolloError) {
+    console.warn('⚠️  Apollo API failed, falling back to Perplexity:', apolloError);
+    dataSource = 'perplexity';
+    
+    try {
+      // Fallback to Perplexity
+      console.log('🔄 Attempting Perplexity fallback...');
+      results = await searchCompaniesWithPerplexity({
+        ...searchParams,
+        per_page: 25,
+        page: 1,
+      });
+      console.log(`✅ Perplexity returned ${results.organizations.length} organizations`);
+    } catch (perplexityError) {
+      console.error('❌ Both Apollo and Perplexity failed');
+      throw new Error('Failed to search organizations with both Apollo and Perplexity');
+    }
+  }
+
+  try {
 
     // Map Apollo organizations to our SellerCompany schema
+    // Note: Apollo has different field names: organization_revenue vs annual_revenue
     const companies = results.organizations.map((org) => {
-      const revenue = org.annual_revenue || 1000000; // Default 1M if not available
+      // Organization Search returns organization_revenue, not annual_revenue
+      const revenue = org.organization_revenue ?? org.annual_revenue ?? 1000000; // Default 1M if not available
       const ebitda = Math.round(revenue * 0.2); // Estimate 20% EBITDA margin
 
       const geography = [org.city, org.state, org.country]
@@ -128,7 +188,7 @@ export async function searchAndSyncOrganizations(campaignId: string) {
         industry: mapIndustry(org.industry),
         revenue,
         ebitda,
-        headcount: org.estimated_num_employees || 50,
+        headcount: org.estimated_num_employees ?? 50,
         geography,
         dealStage: "automated_outreach" as const,
         campaignId: campaign.id,
@@ -155,10 +215,13 @@ export async function searchAndSyncOrganizations(campaignId: string) {
     revalidatePath(`/campaigns/${campaignId}`);
     revalidatePath("/campaigns");
 
+    console.log(`✅ Successfully synced ${companies.length} companies using ${dataSource}`);
+
     return {
       success: true,
       count: companies.length,
       total: results.pagination.total_entries,
+      dataSource, // Track which API was used
     };
   } catch (error) {
     console.error("Error syncing organizations:", error);

@@ -10,8 +10,14 @@ import type {
   OrganizationSearchParams,
   OrganizationSearchResponse,
   ApolloApiError,
+  ApolloOrganization,
+  BulkEnrichOrganizationsResponse,
 } from '@/types/apollo';
-import { OrganizationSearchResponseSchema, ApolloOrganizationSchema } from '@/types/apollo';
+import {
+  OrganizationSearchResponseSchema,
+  ApolloOrganizationSchema,
+  BulkEnrichOrganizationsResponseSchema,
+} from '@/types/apollo';
 import { generateObject } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 
@@ -141,6 +147,75 @@ export async function searchOrganizations(
       body: JSON.stringify(params),
     }
   );
+}
+
+/**
+ * Bulk enrich organizations by domain
+ * 
+ * Enriches up to 10 organizations in a single API call.
+ * Returns full organization data including industry information.
+ * 
+ * @param domains - Array of domains (max 10)
+ * @returns Promise with enriched organizations
+ * 
+ * @example
+ * ```typescript
+ * const orgs = await bulkEnrichOrganizations(["apollo.io", "google.com", "stripe.com"]);
+ * orgs.forEach(org => {
+ *   console.log(`${org.name} - ${org.industry}`);
+ * });
+ * ```
+ */
+export async function bulkEnrichOrganizations(
+  domains: string[]
+): Promise<ApolloOrganization[]> {
+  if (domains.length === 0) return [];
+  if (domains.length > 10) {
+    throw new Error('Maximum 10 domains per bulk enrichment request');
+  }
+
+  const response = await apolloRequest<BulkEnrichOrganizationsResponse>(
+    '/organizations/bulk_enrich',
+    BulkEnrichOrganizationsResponseSchema,
+    {
+      method: 'POST',
+      body: JSON.stringify({ domains }),
+    }
+  );
+
+  // Handle both single org and bulk response formats
+  if (response.organizations) {
+    return response.organizations;
+  } else if (response.organization) {
+    return [response.organization];
+  }
+  return [];
+}
+
+/**
+ * Search for companies using Apollo Organization Search API
+ * 
+ * Uses Organization Search which supports all current filters including
+ * person_titles and person_seniorities to filter companies by roles.
+ * 
+ * @param params - Search parameters (same format as current UI)
+ * @returns Promise with organizations in standard format
+ * 
+ * @example
+ * ```typescript
+ * const results = await searchCompaniesWithApollo({
+ *   organization_locations: [{ city: "San Francisco", state: "California" }],
+ *   organization_num_employees_ranges: ["51,200", "201,500"],
+ *   person_titles: ["CEO", "CTO"],
+ *   per_page: 25,
+ * });
+ * ```
+ */
+export async function searchCompaniesWithApollo(
+  params: OrganizationSearchParams = {}
+): Promise<OrganizationSearchResponse> {
+  // Use Organization Search directly - it supports all our filters
+  return searchOrganizations(params);
 }
 
 /**

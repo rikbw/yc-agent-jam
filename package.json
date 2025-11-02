@@ -15,7 +15,9 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "test:apollo": "tsx scripts/test-apollo-api.ts",
+    "test:apollo:integration": "tsx scripts/test-apollo-integration.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.59",
