@@ -12,10 +12,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Phone, PhoneOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createMessage, finalizeCall } from "@/lib/calls";
+import { MessageRole } from "@/generated/prisma/client";
 
 interface VapiCallDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  callId: string;
   companyData: {
     id: string;
     name: string;
@@ -26,6 +29,7 @@ interface VapiCallDialogProps {
     geography: string;
     dealStage: string;
     ownerBankerName: string;
+    ownerBankerId: string;
     estimatedDealSize: number;
     likelihoodToSell: number;
   };
@@ -36,12 +40,16 @@ type CallStatus = "idle" | "connecting" | "active" | "ended" | "error";
 export function VapiCallDialog({
   open,
   onOpenChange,
+  callId,
   companyData,
 }: VapiCallDialogProps) {
   const [callStatus, setCallStatus] = useState<CallStatus>("idle");
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const vapiRef = useRef<Vapi | null>(null);
+
+  // Track call start time for duration calculation
+  const callStartTimeRef = useRef<Date>(new Date());
 
   useEffect(() => {
     // Initialize Vapi client
@@ -62,15 +70,60 @@ export function VapiCallDialog({
       console.log("Call started");
       setCallStatus("active");
       setErrorMessage(null);
+      // Reset start time when call actually starts
+      callStartTimeRef.current = new Date();
     });
 
-    vapi.on("message", (message: any) => {
+    vapi.on("message", async (message: any) => {
       console.log("Vapi message:", message);
+
+      // Only save final transcripts to database
+      if (
+        message?.type === "transcript" &&
+        message?.transcriptType === "final" &&
+        message?.transcript
+      ) {
+        try {
+          const role = message.role === "assistant" ? MessageRole.assistant : MessageRole.user;
+          await createMessage(
+            callId,
+            role,
+            message.transcript,
+            new Date()
+          );
+          console.log("Saved transcript to database:", message.role);
+        } catch (error) {
+          console.error("Error saving message to database:", error);
+        }
+      }
     });
 
-    vapi.on("call-end", () => {
+    vapi.on("call-end", async () => {
       console.log("Call ended");
       setCallStatus("ended");
+
+      // Finalize call in database
+      try {
+        const endTime = new Date();
+        const durationMinutes = (endTime.getTime() - callStartTimeRef.current.getTime()) / 1000 / 60;
+
+        console.log(`Finalizing call ${callId} (${durationMinutes.toFixed(2)} minutes)`);
+        const result = await finalizeCall(callId, durationMinutes);
+
+        if (result.success) {
+          console.log("Call finalized successfully");
+          if (result.analysis) {
+            console.log("Call analysis completed");
+          } else if (result.analysisError) {
+            console.warn("Call saved but analysis failed:", result.analysisError);
+          }
+        } else {
+          console.error("Failed to finalize call:", result.error);
+        }
+      } catch (error) {
+        console.error("Error finalizing call:", error);
+      }
+
       // Close dialog after a short delay
       setTimeout(() => {
         onOpenChange(false);
@@ -181,8 +234,6 @@ Owner: ${companyData.ownerBankerName}
         },
         // Background office ambient sound
         backgroundSound: "office",
-        // Silence detection - longer timeout for natural pauses
-        silenceTimeoutSeconds: 30,
         // Maximum call duration (15 minutes)
         maxDurationSeconds: 900,
         name: `${companyData.name} Sales Call`,

@@ -93,7 +93,7 @@ export function CallItem({ call }: CallItemProps) {
                 <Phone className="size-4 text-muted-foreground" />
                 <span className="text-sm font-medium text-foreground">{call.bankerName}</span>
               </div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground" suppressHydrationWarning>
                 {callDateFormatted} • {callRelative}
               </div>
             </div>

@@ -114,6 +114,7 @@ model Call {
   duration        Int // in minutes
   outcome         CallOutcome?
   notes           String?
+  summary         String?       // AI-generated call summary
   messages        Message[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
