@@ -20,6 +20,16 @@ const data = {
   versions: ["v1.0.0"],
   navMain: [
     {
+      title: "Campaigns",
+      url: "/campaigns",
+      items: [
+        {
+          title: "All Campaigns",
+          url: "/campaigns",
+        },
+      ],
+    },
+    {
       title: "Deal Sourcing",
       url: "#",
       items: [

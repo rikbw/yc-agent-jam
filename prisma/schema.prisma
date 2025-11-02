@@ -41,6 +41,17 @@ enum Industry {
   Real_Estate
 }
 
+model Campaign {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  sellers     SellerCompany[]
+
+  @@map("campaigns")
+}
+
 model Banker {
   id        String          @id @default(cuid())
   name      String
@@ -61,6 +72,8 @@ model SellerCompany {
   headcount         Int
   geography         String
   dealStage         DealStage
+  campaignId        String?
+  campaign          Campaign? @relation(fields: [campaignId], references: [id])
   ownerBankerId     String
   ownerBanker       Banker    @relation(fields: [ownerBankerId], references: [id])
   lastContactDate   DateTime

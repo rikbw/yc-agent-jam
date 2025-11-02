@@ -32,6 +32,8 @@ export type SellerCompany = {
   headcount: number;
   geography: string;
   dealStage: DealStage;
+  campaignId?: string;
+  campaignName?: string;
   ownerBankerId: string;
   ownerBankerName: string;
   lastContactDate: Date;

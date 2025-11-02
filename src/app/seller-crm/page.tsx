@@ -23,6 +23,7 @@ export default async function SellerCRMPage() {
   const sellersFromDb = await prisma.sellerCompany.findMany({
     include: {
       ownerBanker: true,
+      campaign: true,
     },
     orderBy: {
       createdAt: "desc",
@@ -38,6 +39,8 @@ export default async function SellerCRMPage() {
     headcount: seller.headcount,
     geography: seller.geography,
     dealStage: seller.dealStage as DealStage,
+    campaignId: seller.campaignId ?? undefined,
+    campaignName: seller.campaign?.name,
     ownerBankerId: seller.ownerBankerId,
     ownerBankerName: seller.ownerBanker.name,
     lastContactDate: seller.lastContactDate,

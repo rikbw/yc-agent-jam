@@ -86,6 +86,23 @@ export const columns: ColumnDef<SellerCompany>[] = [
     },
   },
   {
+    accessorKey: "campaignName",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Campaign" />
+    ),
+    cell: ({ row }) => {
+      const campaignName = row.getValue("campaignName") as string | undefined;
+      return (
+        <div className="text-sm text-muted-foreground">
+          {campaignName || "—"}
+        </div>
+      );
+    },
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id));
+    },
+  },
+  {
     accessorKey: "revenue",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Revenue" />
