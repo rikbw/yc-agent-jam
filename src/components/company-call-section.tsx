@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Phone } from "lucide-react";
 import { VapiCallDialog } from "@/components/vapi-call-dialog";
+import { createCall } from "@/lib/calls";
 
 interface CompanyCallSectionProps {
   companyData: {
@@ -16,6 +17,7 @@ interface CompanyCallSectionProps {
     geography: string;
     dealStage: string;
     ownerBankerName: string;
+    ownerBankerId: string;
     estimatedDealSize: number;
     likelihoodToSell: number;
   };
@@ -23,21 +25,50 @@ interface CompanyCallSectionProps {
 
 export function CompanyCallSection({ companyData }: CompanyCallSectionProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [callId, setCallId] = useState<string | null>(null);
+  const [isCreatingCall, setIsCreatingCall] = useState(false);
+
+  const handleStartCall = async () => {
+    setIsCreatingCall(true);
+
+    try {
+      // Create call in database before opening dialog
+      const result = await createCall(companyData.id, companyData.ownerBankerId);
+
+      if (result.success && result.callId) {
+        setCallId(result.callId);
+        setDialogOpen(true);
+      } else {
+        console.error("Failed to create call:", result.error);
+      }
+    } catch (error) {
+      console.error("Error creating call:", error);
+    } finally {
+      setIsCreatingCall(false);
+    }
+  };
 
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" onClick={() => setDialogOpen(true)}>
+        <Button 
+          size="sm" 
+          onClick={handleStartCall}
+          disabled={isCreatingCall}
+        >
           <Phone className="size-4" />
-          Start Call
+          {isCreatingCall ? "Preparing..." : "Start Call"}
         </Button>
       </div>
 
-      <VapiCallDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        companyData={companyData}
-      />
+      {callId && (
+        <VapiCallDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          companyData={companyData}
+          callId={callId}
+        />
+      )}
     </>
   );
 }

@@ -55,6 +55,18 @@ enum MessageRole {
   system
 }
 
+enum OAuthService {
+  gmail
+  google_calendar
+  calendly
+}
+
+enum OAuthStatus {
+  pending
+  active
+  expired
+}
+
 model Campaign {
   id           String          @id @default(cuid())
   name         String
@@ -68,13 +80,14 @@ model Campaign {
 }
 
 model Banker {
-  id        String          @id @default(cuid())
-  name      String
-  email     String?
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  sellers   SellerCompany[]
-  calls     Call[]
+  id            String          @id @default(cuid())
+  name          String
+  email         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  sellers       SellerCompany[]
+  calls         Call[]
+  oauthSessions OAuthSession[]
 
   @@map("bankers")
 }
@@ -133,4 +146,19 @@ model Message {
   updatedAt  DateTime    @updatedAt
 
   @@map("messages")
+}
+
+model OAuthSession {
+  id                  String        @id @default(cuid())
+  bankerId            String
+  banker              Banker        @relation(fields: [bankerId], references: [id], onDelete: Cascade)
+  service             OAuthService
+  serverDeploymentId  String
+  oauthSessionId      String        // Metorial session ID
+  status              OAuthStatus   @default(pending)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@unique([bankerId, service])
+  @@map("oauth_sessions")
 }

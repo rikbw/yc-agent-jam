@@ -79,6 +79,16 @@ const data = {
         },
       ],
     },
+    {
+      title: "Settings",
+      url: "/settings",
+      items: [
+        {
+          title: "Integrations",
+          url: "/settings",
+        },
+      ],
+    },
   ],
 }
 
