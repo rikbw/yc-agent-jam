@@ -20,16 +20,13 @@ type ConversationStep = {
 };
 
 /**
- * Run AI conversation with Metorial tools for a banker
+ * Run AI conversation with Metorial tools
  * Returns conversation steps for debugging/display
  */
-export async function runMetorialConversation(
-  bankerId: string,
-  userMessage: string
-) {
+export async function runMetorialConversation(userMessage: string) {
   try {
     // Get active OAuth sessions
-    const oauthSessions = await getActiveOAuthSessions(bankerId);
+    const oauthSessions = await getActiveOAuthSessions();
 
     if (oauthSessions.length === 0) {
       return {

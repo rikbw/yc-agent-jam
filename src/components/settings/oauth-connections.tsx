@@ -12,7 +12,7 @@ import {
   waitForOAuthCompletion,
   disconnectOAuthSession
 } from "@/lib/metorial-oauth";
-import { getAvailableToolsForBanker } from "@/lib/metorial-session";
+import { getAvailableTools } from "@/lib/metorial-session";
 import { runMetorialConversation } from "@/lib/vapi-metorial";
 
 type ServiceConfig = {
@@ -37,11 +37,7 @@ const SERVICES: ServiceConfig[] = [
   }
 ];
 
-interface OAuthConnectionsProps {
-  bankerId: string;
-}
-
-export function OAuthConnections({ bankerId }: OAuthConnectionsProps) {
+export function OAuthConnections() {
   const [statuses, setStatuses] = useState<Record<string, { isConnected: boolean; loading: boolean }>>({});
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{
@@ -68,13 +64,13 @@ export function OAuthConnections({ bankerId }: OAuthConnectionsProps) {
   // Load initial statuses
   useEffect(() => {
     loadStatuses();
-  }, [bankerId]);
+  }, []);
 
   const loadStatuses = async () => {
     const newStatuses: Record<string, { isConnected: boolean; loading: boolean }> = {};
     
     for (const service of SERVICES) {
-      const status = await getOAuthStatus(bankerId, service.id);
+      const status = await getOAuthStatus(service.id);
       newStatuses[service.id] = {
         isConnected: status.isConnected ?? false,
         loading: false
@@ -88,7 +84,7 @@ export function OAuthConnections({ bankerId }: OAuthConnectionsProps) {
     setStatuses(prev => ({ ...prev, [serviceId]: { ...prev[serviceId], loading: true } }));
 
     try {
-      const result = await createOAuthSession(bankerId, serviceId);
+      const result = await createOAuthSession(serviceId);
       
       if (!result.success || !result.oauthUrl || !result.sessionId) {
         throw new Error(result.error || 'Failed to create session');
@@ -124,7 +120,7 @@ export function OAuthConnections({ bankerId }: OAuthConnectionsProps) {
   const handleDisconnect = async (serviceId: 'gmail' | 'google_calendar') => {
     setStatuses(prev => ({ ...prev, [serviceId]: { ...prev[serviceId], loading: true } }));
 
-    const result = await disconnectOAuthSession(bankerId, serviceId);
+    const result = await disconnectOAuthSession(serviceId);
     
     if (result.success) {
       setStatuses(prev => ({ ...prev, [serviceId]: { isConnected: false, loading: false } }));
@@ -141,7 +137,7 @@ export function OAuthConnections({ bankerId }: OAuthConnectionsProps) {
     setTestResult(null);
 
     try {
-      const result = await getAvailableToolsForBanker(bankerId);
+      const result = await getAvailableTools();
       setTestResult(result);
     } catch (error) {
       console.error('Test error:', error);
@@ -163,7 +159,7 @@ export function OAuthConnections({ bankerId }: OAuthConnectionsProps) {
     setAiResult(null);
 
     try {
-      const result = await runMetorialConversation(bankerId, aiPrompt);
+      const result = await runMetorialConversation(aiPrompt);
       setAiResult(result);
     } catch (error) {
       console.error('AI test error:', error);

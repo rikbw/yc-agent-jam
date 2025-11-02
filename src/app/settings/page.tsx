@@ -14,10 +14,6 @@ import {
 import { OAuthConnections } from "@/components/settings/oauth-connections";
 
 export default async function SettingsPage() {
-  // TODO: Get actual logged-in banker ID from auth session
-  // For now, using first banker from seed data
-  const bankerId = "banker-1";
-
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -43,7 +39,7 @@ export default async function SettingsPage() {
               Manage your integrations and preferences
             </p>
           </div>
-          <OAuthConnections bankerId={bankerId} />
+          <OAuthConnections />
         </div>
       </SidebarInset>
     </SidebarProvider>

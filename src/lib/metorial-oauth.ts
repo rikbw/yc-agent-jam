@@ -3,6 +3,7 @@
 import { Metorial } from 'metorial';
 import { prisma } from '@/lib/prisma';
 import { OAuthService, OAuthStatus } from '@/generated/prisma/client';
+import { getDefaultBanker } from '@/lib/default-user';
 
 const metorial = new Metorial({
   apiKey: process.env.METORIAL_API_KEY!
@@ -16,11 +17,9 @@ const SERVICE_DEPLOYMENT_MAP = {
 /**
  * Creates OAuth session and returns OAuth URL for user authentication
  */
-export async function createOAuthSession(
-  bankerId: string,
-  service: 'gmail' | 'google_calendar'
-) {
+export async function createOAuthSession(service: 'gmail' | 'google_calendar') {
   try {
+    const banker = await getDefaultBanker();
     const serverDeploymentId = SERVICE_DEPLOYMENT_MAP[service];
     
     // Create OAuth session via Metorial
@@ -31,7 +30,7 @@ export async function createOAuthSession(
     // Store in database with pending status
     const dbSession = await prisma.oAuthSession.upsert({
       where: {
-        bankerId_service: { bankerId, service }
+        bankerId_service: { bankerId: banker.id, service }
       },
       update: {
         serverDeploymentId,
@@ -39,7 +38,7 @@ export async function createOAuthSession(
         status: OAuthStatus.pending,
       },
       create: {
-        bankerId,
+        bankerId: banker.id,
         service,
         serverDeploymentId,
         oauthSessionId: oauthSession.id,
@@ -104,12 +103,13 @@ export async function waitForOAuthCompletion(sessionId: string) {
 }
 
 /**
- * Get OAuth session status for a banker and service
+ * Get OAuth session status for a service
  */
-export async function getOAuthStatus(bankerId: string, service: 'gmail' | 'google_calendar') {
+export async function getOAuthStatus(service: 'gmail' | 'google_calendar') {
   try {
+    const banker = await getDefaultBanker();
     const session = await prisma.oAuthSession.findUnique({
-      where: { bankerId_service: { bankerId, service } }
+      where: { bankerId_service: { bankerId: banker.id, service } }
     });
 
     return {
@@ -124,12 +124,13 @@ export async function getOAuthStatus(bankerId: string, service: 'gmail' | 'googl
 }
 
 /**
- * Get all active OAuth sessions for a banker (for VAPI usage)
+ * Get all active OAuth sessions (for VAPI usage)
  */
-export async function getActiveOAuthSessions(bankerId: string) {
+export async function getActiveOAuthSessions() {
+  const banker = await getDefaultBanker();
   const sessions = await prisma.oAuthSession.findMany({
     where: {
-      bankerId,
+      bankerId: banker.id,
       status: OAuthStatus.active
     }
   });
@@ -144,10 +145,11 @@ export async function getActiveOAuthSessions(bankerId: string) {
 /**
  * Disconnect OAuth session
  */
-export async function disconnectOAuthSession(bankerId: string, service: 'gmail' | 'google_calendar') {
+export async function disconnectOAuthSession(service: 'gmail' | 'google_calendar') {
   try {
+    const banker = await getDefaultBanker();
     await prisma.oAuthSession.update({
-      where: { bankerId_service: { bankerId, service } },
+      where: { bankerId_service: { bankerId: banker.id, service } },
       data: { status: OAuthStatus.expired }
     });
 

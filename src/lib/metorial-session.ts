@@ -9,12 +9,12 @@ const metorial = new Metorial({
 });
 
 /**
- * Creates an MCP session with authenticated OAuth sessions for a banker
+ * Creates an MCP session with authenticated OAuth sessions
  * Returns tool manager that can be used to call tools
  */
-export async function createMetorialSessionForBanker(bankerId: string) {
+export async function createMetorialSession() {
   // Get active OAuth sessions
-  const oauthSessions = await getActiveOAuthSessions(bankerId);
+  const oauthSessions = await getActiveOAuthSessions();
 
   if (oauthSessions.length === 0) {
     throw new Error('No active OAuth sessions found. Please connect your accounts in Settings.');
@@ -40,11 +40,11 @@ export async function createMetorialSessionForBanker(bankerId: string) {
 }
 
 /**
- * Get available tools for a banker (for display/debugging)
+ * Get available tools (for display/debugging)
  */
-export async function getAvailableToolsForBanker(bankerId: string) {
+export async function getAvailableTools() {
   try {
-    const oauthSessions = await getActiveOAuthSessions(bankerId);
+    const oauthSessions = await getActiveOAuthSessions();
     
     if (oauthSessions.length === 0) {
       return {
@@ -55,7 +55,7 @@ export async function getAvailableToolsForBanker(bankerId: string) {
       };
     }
 
-    const { tools, close } = await createMetorialSessionForBanker(bankerId);
+    const { tools, close } = await createMetorialSession();
     
     const toolList = tools.map(t => ({
       id: t.id,
