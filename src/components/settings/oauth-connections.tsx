@@ -12,7 +12,7 @@ import {
   waitForOAuthCompletion,
   disconnectOAuthSession
 } from "@/lib/metorial-oauth";
-import { getAvailableTools } from "@/lib/metorial-session";
+import { getConnectionStatus } from "@/lib/metorial-session";
 import { runMetorialConversation } from "@/lib/vapi-metorial";
 
 type ServiceConfig = {
@@ -42,8 +42,7 @@ export function OAuthConnections() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{
     success: boolean;
-    tools: Array<{ id: string; name: string; description: string | null }>;
-    connectedServices: string[];
+    connectedServices: Array<{ service: string; serverDeploymentId: string }>;
     error?: string;
   } | null>(null);
 
@@ -53,11 +52,7 @@ export function OAuthConnections() {
   const [aiResult, setAiResult] = useState<{
     success: boolean;
     response?: string;
-    steps?: Array<{
-      type: 'message' | 'tool_calls' | 'response';
-      content: string;
-      toolCalls?: Array<{ name: string; arguments: string }>;
-    }>;
+    steps?: number;
     error?: string;
   } | null>(null);
 
@@ -137,13 +132,12 @@ export function OAuthConnections() {
     setTestResult(null);
 
     try {
-      const result = await getAvailableTools();
+      const result = await getConnectionStatus();
       setTestResult(result);
     } catch (error) {
       console.error('Test error:', error);
       setTestResult({
         success: false,
-        tools: [],
         connectedServices: [],
         error: error instanceof Error ? error.message : 'Test failed'
       });
@@ -267,41 +261,32 @@ export function OAuthConnections() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="size-4 text-green-600" />
-                    <span className="font-medium">Connection successful!</span>
+                    <span className="font-medium">OAuth sessions are active and ready!</span>
                   </div>
                   
                   <div>
-                    <p className="text-sm font-medium mb-2">Connected Services:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {testResult.connectedServices.map(service => (
-                        <Badge key={service} variant="outline">
-                          {service.replace('_', ' ')}
-                        </Badge>
+                    <p className="text-sm font-medium mb-2">Connected Services ({testResult.connectedServices.length}):</p>
+                    <div className="space-y-2">
+                      {testResult.connectedServices.map(conn => (
+                        <div
+                          key={conn.service}
+                          className="border rounded-lg p-3 bg-muted/30"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-sm">
+                              {conn.service.replace('_', ' ')}
+                            </div>
+                            <Badge variant="outline" className="font-mono text-xs">
+                              {conn.serverDeploymentId.substring(0, 12)}...
+                            </Badge>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
 
-                  <div>
-                    <p className="text-sm font-medium mb-2">
-                      Available Tools ({testResult.tools.length}):
-                    </p>
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {testResult.tools.map(tool => (
-                        <div
-                          key={tool.id}
-                          className="border rounded-lg p-3 bg-muted/30"
-                        >
-                          <div className="font-mono text-sm font-semibold">
-                            {tool.name}
-                          </div>
-                          {tool.description && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {tool.description}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                  <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                    ✓ These OAuth sessions will be used by the AI agent to access your Gmail and Calendar
                   </div>
                 </div>
               ) : (
@@ -359,56 +344,17 @@ export function OAuthConnections() {
             {aiResult && (
               <div className="space-y-3">
                 {aiResult.success ? (
-                  <>
-                    {/* Conversation steps */}
-                    {aiResult.steps && aiResult.steps.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">Conversation Flow:</p>
-                        <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
-                          {aiResult.steps.map((step, idx) => (
-                            <div key={idx} className="space-y-1">
-                              {step.type === 'message' && (
-                                <div className="text-sm">
-                                  <span className="font-medium">→</span> {step.content}
-                                </div>
-                              )}
-                              {step.type === 'tool_calls' && (
-                                <div className="ml-4 space-y-1">
-                                  <div className="text-sm text-orange-600 font-medium">
-                                    🔧 {step.content}
-                                  </div>
-                                  {step.toolCalls && (
-                                    <div className="ml-4 space-y-1">
-                                      {step.toolCalls.map((call, callIdx) => (
-                                        <div key={callIdx} className="text-xs font-mono bg-background/50 rounded px-2 py-1">
-                                          <span className="text-blue-600">{call.name}</span>
-                                          <span className="text-muted-foreground ml-2">
-                                            {JSON.parse(call.arguments).maxResults ? 
-                                              `(${JSON.parse(call.arguments).maxResults} results)` : 
-                                              ''}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                              {step.type === 'response' && (
-                                <div className="ml-4 mt-2 rounded-lg bg-green-50 dark:bg-green-950/20 p-3 border border-green-200 dark:border-green-800">
-                                  <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                                    Final Response:
-                                  </p>
-                                  <p className="text-sm text-green-800 dark:text-green-200 mt-1">
-                                    {step.content}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  <div className="rounded-lg bg-green-50 dark:bg-green-950/20 p-4 border border-green-200 dark:border-green-800">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle2 className="size-4 text-green-600" />
+                      <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                        Response {aiResult.steps && `(completed in ${aiResult.steps} steps)`}:
+                      </p>
+                    </div>
+                    <p className="text-sm text-green-800 dark:text-green-200 whitespace-pre-wrap">
+                      {aiResult.response}
+                    </p>
+                  </div>
                 ) : (
                   <div className="flex items-start gap-2 text-sm text-red-600 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800 p-3">
                     <XCircle className="size-4 mt-0.5 flex-shrink-0" />
