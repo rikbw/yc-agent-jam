@@ -10,10 +10,10 @@ import {
   createOAuthSession,
   getOAuthStatus,
   waitForOAuthCompletion,
-  disconnectOAuthSession
+  disconnectOAuthSession,
+  runMetorialConversation
 } from "@/lib/metorial-oauth";
 import { getConnectionStatus } from "@/lib/metorial-session";
-import { runMetorialConversation } from "@/lib/vapi-metorial";
 
 type ServiceConfig = {
   id: 'gmail' | 'google_calendar';

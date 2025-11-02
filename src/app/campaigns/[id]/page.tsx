@@ -21,6 +21,7 @@ import { mapDbIndustryToType } from "@/lib/db-mappers";
 import type { SellerCompany, DealStage } from "@/types/seller";
 import { RefreshCompaniesButton } from "@/components/campaigns/refresh-companies-button";
 import { SearchParamsSection } from "@/components/campaigns/search-params-section";
+import { CallAllButton } from "@/components/campaigns/call-all-button";
 
 interface CampaignPageProps {
   params: {
@@ -110,7 +111,10 @@ export default async function CampaignPage({ params }: CampaignPageProps) {
               <h2 className="text-lg font-semibold">
                 Companies ({sellers.length})
               </h2>
-              <RefreshCompaniesButton campaignId={campaign.id} />
+              <div className="flex items-center gap-2">
+                <CallAllButton campaignId={campaign.id} />
+                <RefreshCompaniesButton campaignId={campaign.id} />
+              </div>
             </div>
             <DataTable
               columns={columns}

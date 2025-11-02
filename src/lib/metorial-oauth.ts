@@ -1,9 +1,9 @@
 "use server";
 
 import { Metorial } from 'metorial';
-import { MetorialMcpSession } from '@metorial/mcp-session';
-import { getDefaultBanker } from '@/lib/default-user';
 import { randomBytes } from 'crypto';
+import OpenAI from 'openai';
+import { prisma } from '@/lib/prisma';
 
 const metorial = new Metorial({
   apiKey: process.env.METORIAL_API_KEY!
@@ -14,43 +14,20 @@ const SERVICE_DEPLOYMENT_MAP = {
   google_calendar: process.env.METORIAL_GCALENDAR_ID!,
 } as const;
 
+const openai = new OpenAI({
+  apiKey: process.env.OPENROUTER_API_KEY,
+  baseURL: 'https://openrouter.ai/api/v1',
+});
+
 // Local types
 type OAuthService = 'gmail' | 'google_calendar';
 type OAuthStatus = 'pending' | 'active' | 'expired';
-
-interface OAuthSessionData {
-  id: string;
-  bankerId: string;
-  service: OAuthService;
-  serverDeploymentId: string;
-  oauthSessionId: string;
-  status: OAuthStatus;
-}
-
-// Global in-memory storage
-const oauthSessions = new Map<string, OAuthSessionData>();
-let gmailMcpSession: MetorialMcpSession | null = null;
-let calendarMcpSession: MetorialMcpSession | null = null;
-
-function getSessionKey(bankerId: string, service: OAuthService): string {
-  return `${bankerId}_${service}`;
-}
-
-function findSessionById(sessionId: string): OAuthSessionData | undefined {
-  for (const session of oauthSessions.values()) {
-    if (session.id === sessionId) {
-      return session;
-    }
-  }
-  return undefined;
-}
 
 /**
  * Creates OAuth session and returns OAuth URL for user authentication
  */
 export async function createOAuthSession(service: 'gmail' | 'google_calendar') {
   try {
-    const banker = await getDefaultBanker();
     const serverDeploymentId = SERVICE_DEPLOYMENT_MAP[service];
 
     // Create OAuth session via Metorial
@@ -58,25 +35,29 @@ export async function createOAuthSession(service: 'gmail' | 'google_calendar') {
       serverDeploymentId
     });
 
-    // Store in global memory with pending status
-    const sessionKey = getSessionKey(banker.id, service);
+    // Store in database with pending status
     const sessionId = randomBytes(16).toString('hex');
 
-    const sessionData: OAuthSessionData = {
-      id: sessionId,
-      bankerId: banker.id,
-      service,
-      serverDeploymentId,
-      oauthSessionId: oauthSession.id,
-      status: 'pending',
-    };
+    // Delete any existing session for this service
+    await prisma.oAuthSession.deleteMany({
+      where: { service }
+    });
 
-    oauthSessions.set(sessionKey, sessionData);
+    // Create new session
+    const dbSession = await prisma.oAuthSession.create({
+      data: {
+        sessionId,
+        service,
+        serverDeploymentId,
+        oauthSessionId: oauthSession.id,
+        status: 'pending',
+      }
+    });
 
     return {
       success: true,
       oauthUrl: oauthSession.url,
-      sessionId: sessionData.id
+      sessionId: dbSession.sessionId
     };
   } catch (error) {
     console.error('Error creating OAuth session:', error);
@@ -92,7 +73,9 @@ export async function createOAuthSession(service: 'gmail' | 'google_calendar') {
  */
 export async function waitForOAuthCompletion(sessionId: string) {
   try {
-    const session = findSessionById(sessionId);
+    const session = await prisma.oAuthSession.findUnique({
+      where: { sessionId }
+    });
 
     if (!session) {
       throw new Error('Session not found');
@@ -105,23 +88,23 @@ export async function waitForOAuthCompletion(sessionId: string) {
     }]);
 
     // Update status to active
-    const sessionKey = getSessionKey(session.bankerId, session.service);
-    session.status = 'active';
-    oauthSessions.set(sessionKey, session);
-
-    // Rebuild MCP sessions with new OAuth
-    await rebuildMcpSessions();
+    await prisma.oAuthSession.update({
+      where: { sessionId },
+      data: { status: 'active' }
+    });
 
     return { success: true };
   } catch (error) {
     console.error('Error waiting for OAuth completion:', error);
 
     // Mark as expired on error
-    const session = findSessionById(sessionId);
-    if (session) {
-      const sessionKey = getSessionKey(session.bankerId, session.service);
-      session.status = 'expired';
-      oauthSessions.set(sessionKey, session);
+    try {
+      await prisma.oAuthSession.update({
+        where: { sessionId },
+        data: { status: 'expired' }
+      });
+    } catch {
+      // Ignore if session doesn't exist
     }
 
     return {
@@ -136,14 +119,15 @@ export async function waitForOAuthCompletion(sessionId: string) {
  */
 export async function getOAuthStatus(service: 'gmail' | 'google_calendar') {
   try {
-    const banker = await getDefaultBanker();
-    const sessionKey = getSessionKey(banker.id, service);
-    const session = oauthSessions.get(sessionKey);
+    const session = await prisma.oAuthSession.findFirst({
+      where: { service },
+      orderBy: { createdAt: 'desc' }
+    });
 
     return {
       isConnected: session?.status === 'active',
       status: session?.status || null,
-      sessionId: session?.id || null
+      sessionId: session?.sessionId || null
     };
   } catch (error) {
     console.error('Error checking OAuth status:', error);
@@ -152,19 +136,14 @@ export async function getOAuthStatus(service: 'gmail' | 'google_calendar') {
 }
 
 /**
- * Get all active OAuth sessions (for VAPI usage)
+ * Get active OAuth sessions for Metorial API calls
  */
 export async function getActiveOAuthSessions() {
-  const banker = await getDefaultBanker();
-  const activeSessions: OAuthSessionData[] = [];
+  const activeSessions = await prisma.oAuthSession.findMany({
+    where: { status: 'active' }
+  });
 
-  for (const session of oauthSessions.values()) {
-    if (session.bankerId === banker.id && session.status === 'active') {
-      activeSessions.push(session);
-    }
-  }
-
-  return activeSessions.map((s: OAuthSessionData) => ({
+  return activeSessions.map(s => ({
     serverDeploymentId: s.serverDeploymentId,
     oauthSessionId: s.oauthSessionId,
     service: s.service
@@ -172,60 +151,52 @@ export async function getActiveOAuthSessions() {
 }
 
 /**
- * Rebuild MCP sessions from active OAuth sessions
+ * Run AI conversation with Metorial tools using the simple .run() method
+ * This handles session management and conversation loops automatically
  */
-async function rebuildMcpSessions() {
-  const sessions = await getActiveOAuthSessions();
+export async function runMetorialConversation(userMessage: string) {
+  try {
+    // Validate required environment variables
+    if (!process.env.OPENROUTER_API_KEY) {
+      throw new Error('OPENROUTER_API_KEY is not configured');
+    }
 
-  // Gmail session
-  const gmailSession = sessions.find(s => s.service === 'gmail');
-  if (gmailMcpSession) {
-    await gmailMcpSession.close();
-    gmailMcpSession = null;
-  }
-  if (gmailSession) {
-    gmailMcpSession = new MetorialMcpSession(metorial, {
-      serverDeployments: [{
-        serverDeploymentId: gmailSession.serverDeploymentId,
-        oauthSessionId: gmailSession.oauthSessionId
-      }]
+    // Get active OAuth sessions
+    const oauthSessions = await getActiveOAuthSessions();
+
+    if (oauthSessions.length === 0) {
+      return {
+        success: false,
+        error: 'No OAuth sessions connected. Please connect your accounts first.',
+        response: ''
+      };
+    }
+
+    // Use the simple .run() method which handles everything
+    const result = await metorial.run({
+      message: userMessage,
+      serverDeployments: oauthSessions.map(s => ({
+        serverDeploymentId: s.serverDeploymentId,
+        oauthSessionId: s.oauthSessionId
+      })),
+      model: 'gpt-4o-mini',
+      client: openai,
+      maxSteps: 5
     });
-  }
 
-  // Calendar session
-  const calendarSession = sessions.find(s => s.service === 'google_calendar');
-  if (calendarMcpSession) {
-    await calendarMcpSession.close();
-    calendarMcpSession = null;
+    return {
+      success: true,
+      response: result.text,
+      steps: result.steps
+    };
+  } catch (error) {
+    console.error('Metorial conversation error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      response: ''
+    };
   }
-  if (calendarSession) {
-    calendarMcpSession = new MetorialMcpSession(metorial, {
-      serverDeployments: [{
-        serverDeploymentId: calendarSession.serverDeploymentId,
-        oauthSessionId: calendarSession.oauthSessionId
-      }]
-    });
-  }
-}
-
-/**
- * Get Gmail MCP session (creates if needed)
- */
-export async function getGmailMcpSession() {
-  if (!gmailMcpSession) {
-    await rebuildMcpSessions();
-  }
-  return gmailMcpSession;
-}
-
-/**
- * Get Calendar MCP session (creates if needed)
- */
-export async function getCalendarMcpSession() {
-  if (!calendarMcpSession) {
-    await rebuildMcpSessions();
-  }
-  return calendarMcpSession;
 }
 
 /**
@@ -233,17 +204,10 @@ export async function getCalendarMcpSession() {
  */
 export async function disconnectOAuthSession(service: 'gmail' | 'google_calendar') {
   try {
-    const banker = await getDefaultBanker();
-    const sessionKey = getSessionKey(banker.id, service);
-    const session = oauthSessions.get(sessionKey);
-
-    if (session) {
-      session.status = 'expired';
-      oauthSessions.set(sessionKey, session);
-    }
-
-    // Rebuild MCP sessions without disconnected OAuth
-    await rebuildMcpSessions();
+    await prisma.oAuthSession.updateMany({
+      where: { service },
+      data: { status: 'expired' }
+    });
 
     return { success: true };
   } catch (error) {
@@ -254,4 +218,3 @@ export async function disconnectOAuthSession(service: 'gmail' | 'google_calendar
     };
   }
 }
-

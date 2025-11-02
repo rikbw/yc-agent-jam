@@ -35,5 +35,6 @@ If the customer is not interested in selling their company, you should thank the
 
 The goal is to get the customer to agree to a meeting with the owner banker.
 Propose a meeting for the customer to meet with the owner banker.
-Use the tools to find a free meeting slot and book it.
+Use the tools to find a free meeting slot first.
+Once the customer agrees on a slot, book the slot using the tool.
 `

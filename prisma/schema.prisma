@@ -64,6 +64,30 @@ enum ActionStatus {
   completed
 }
 
+enum OAuthService {
+  gmail
+  google_calendar
+}
+
+enum OAuthStatus {
+  pending
+  active
+  expired
+}
+
+model OAuthSession {
+  id                   String       @id @default(cuid())
+  sessionId            String       @unique // Our internal session ID
+  service              OAuthService
+  serverDeploymentId   String
+  oauthSessionId       String       // Metorial's OAuth session ID
+  status               OAuthStatus  @default(pending)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  @@map("oauth_sessions")
+}
+
 model Campaign {
   id           String          @id @default(cuid())
   name         String

@@ -17,9 +17,9 @@ import { MessageRole } from "@/generated/prisma/client";
 import { vapiSystemPrompt } from "@/lib/vapi/vapi";
 import {
   vapiTools,
-  handleToolCall,
   type ToolContext,
 } from "@/lib/vapi/tools";
+import { handleToolCallAction } from "@/lib/vapi/server-tool-actions";
 
 interface VapiCallDialogProps {
   open: boolean;
@@ -96,7 +96,7 @@ export function VapiCallDialog({
 
         message.toolCallList?.forEach(async (toolCall: any) => {
           console.log("Processing tool call:", toolCall);
-          await handleToolCall(toolCall, context);
+          await handleToolCallAction(toolCall, context);
         });
       }
 
@@ -209,6 +209,25 @@ export function VapiCallDialog({
     setErrorMessage(null);
 
     try {
+      // Request default microphone access first to ensure browser uses the correct device
+      // This prevents the browser from defaulting to iPhone mic or other non-preferred devices
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          }
+        });
+        // Stop the stream immediately - we just needed to establish permissions
+        stream.getTracks().forEach(track => track.stop());
+      } catch (micError) {
+        console.error("Failed to access microphone:", micError);
+        setErrorMessage("Please allow microphone access to start the call");
+        setCallStatus("error");
+        return;
+      }
+
       // Format company data for the assistant
       const formatCurrency = (value: number) => {
         return new Intl.NumberFormat("en-US", {
