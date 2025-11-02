@@ -1,6 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "../../src/generated/prisma/client";
-import { DealStage, Industry } from "../../src/generated/prisma/enums";
+import { PrismaClient, DealStage, Industry } from "../../src/generated/prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -109,6 +108,15 @@ const geographies = [
   "UK",
 ];
 
+const activeDealStages: Set<DealStage> = new Set([
+  DealStage.pitch_meeting_planned,
+  DealStage.proposal_sent,
+  DealStage.mandate_signed,
+  DealStage.deal_material_creation,
+  DealStage.buyer_reachouts,
+  DealStage.deal_negotiations,
+]);
+
 function randomElement<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
 }
@@ -158,14 +166,7 @@ async function seed() {
     const dealStage = randomElement(dealStages);
 
     // More recent contact for active deals
-    const isActiveDeal = [
-      DealStage.pitch_meeting_planned,
-      DealStage.proposal_sent,
-      DealStage.mandate_signed,
-      DealStage.deal_material_creation,
-      DealStage.buyer_reachouts,
-      DealStage.deal_negotiations,
-    ].includes(dealStage);
+    const isActiveDeal = activeDealStages.has(dealStage);
 
     const lastContactDaysAgo = isActiveDeal
       ? randomNumber(1, 14)

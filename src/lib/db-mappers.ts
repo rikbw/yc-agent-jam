@@ -1,4 +1,4 @@
-import type { Industry as DbIndustry } from "@/generated/prisma/enums";
+import type { Industry as DbIndustry } from "@/generated/prisma/client";
 import type { Industry } from "@/types/seller";
 
 const industryMap: Record<DbIndustry, Industry> = {
