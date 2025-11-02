@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { CompanyLogo } from "@/components/company-logo";
+import type { Call } from "@/types/call";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -96,6 +97,19 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
     where: { id },
     include: {
       ownerBanker: true,
+      calls: {
+        include: {
+          banker: true,
+          messages: {
+            orderBy: {
+              timestamp: 'asc',
+            },
+          },
+        },
+        orderBy: {
+          callDate: 'desc',
+        },
+      },
     },
   });
 
@@ -137,6 +151,29 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
     day: "numeric",
     year: "numeric",
   }).format(company.lastContactDate);
+
+  // Transform calls data
+  const calls: Call[] = companyFromDb.calls.map((call) => ({
+    id: call.id,
+    sellerCompanyId: call.sellerCompanyId,
+    bankerId: call.bankerId,
+    bankerName: call.banker.name,
+    callDate: call.callDate,
+    duration: call.duration,
+    outcome: call.outcome as Call['outcome'],
+    notes: call.notes ?? undefined,
+    messages: call.messages.map((msg) => ({
+      id: msg.id,
+      callId: msg.callId,
+      role: msg.role as 'assistant' | 'user' | 'system',
+      transcript: msg.transcript,
+      timestamp: msg.timestamp,
+      createdAt: msg.createdAt,
+      updatedAt: msg.updatedAt,
+    })),
+    createdAt: call.createdAt,
+    updatedAt: call.updatedAt,
+  }));
 
   const recordDetailRows: { label: string; value: ReactNode }[] = [
     {
@@ -297,6 +334,7 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
               <CompanyDetailTabs
                 ownerBankerName={company.ownerBankerName}
                 lastContactRelative={lastContactRelative}
+                calls={calls}
               />
             </div>
 

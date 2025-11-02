@@ -41,6 +41,20 @@ enum Industry {
   Real_Estate
 }
 
+enum CallOutcome {
+  productive
+  no_answer
+  voicemail
+  scheduled_meeting
+  not_interested
+}
+
+enum MessageRole {
+  assistant
+  user
+  system
+}
+
 model Campaign {
   id           String          @id @default(cuid())
   name         String
@@ -60,6 +74,7 @@ model Banker {
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
   sellers   SellerCompany[]
+  calls     Call[]
 
   @@map("bankers")
 }
@@ -82,8 +97,39 @@ model SellerCompany {
   likelihoodToSell  Int
   website           String?
   valuation         Int?
+  calls             Call[]
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   @@map("seller_companies")
+}
+
+model Call {
+  id              String        @id @default(cuid())
+  sellerCompanyId String
+  sellerCompany   SellerCompany @relation(fields: [sellerCompanyId], references: [id], onDelete: Cascade)
+  bankerId        String
+  banker          Banker        @relation(fields: [bankerId], references: [id])
+  callDate        DateTime
+  duration        Int // in minutes
+  outcome         CallOutcome?
+  notes           String?
+  messages        Message[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("calls")
+}
+
+model Message {
+  id         String      @id @default(cuid())
+  callId     String
+  call       Call        @relation(fields: [callId], references: [id], onDelete: Cascade)
+  role       MessageRole
+  transcript String
+  timestamp  DateTime
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@map("messages")
 }

@@ -6,10 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Filter, Paperclip, UserPlus } from "lucide-react";
+import { CallsList } from "@/components/calls-list";
+import { CallActivityItem } from "@/components/call-activity-item";
+import type { Call } from "@/types/call";
 
 interface CompanyDetailTabsProps {
   ownerBankerName: string;
   lastContactRelative: string;
+  calls: Call[];
 }
 
 const getInitials = (value: string) => {
@@ -22,7 +26,7 @@ const getInitials = (value: string) => {
     .join("");
 };
 
-export function CompanyDetailTabs({ ownerBankerName, lastContactRelative }: CompanyDetailTabsProps) {
+export function CompanyDetailTabs({ ownerBankerName, lastContactRelative, calls }: CompanyDetailTabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") || "activity";
@@ -47,6 +51,13 @@ export function CompanyDetailTabs({ ownerBankerName, lastContactRelative }: Comp
             className="rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-2 shadow-none ring-0 ring-offset-0 data-[state=active]:border-primary"
           >
             Activity
+          </TabsTrigger>
+          <TabsTrigger
+            value="calls"
+            className="rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-2 shadow-none ring-0 ring-offset-0 data-[state=active]:border-primary"
+          >
+            Calls
+            <span className="ml-2 text-xs text-muted-foreground">{calls.length}</span>
           </TabsTrigger>
           <TabsTrigger
             value="emails"
@@ -97,10 +108,24 @@ export function CompanyDetailTabs({ ownerBankerName, lastContactRelative }: Comp
         </div>
       </div>
 
-      <TabsContent value="activity" className="flex flex-1 flex-col px-6 pb-6">
-        <div className="flex flex-1 items-center justify-center bg-muted/10 text-sm text-muted-foreground">
-          Activity feed coming soon.
-        </div>
+      <TabsContent value="activity" className="flex flex-1 flex-col">
+        {calls.length > 0 ? (
+          <div className="flex-1 overflow-auto">
+            {calls
+              .sort((a, b) => b.callDate.getTime() - a.callDate.getTime())
+              .map((call) => (
+                <CallActivityItem key={call.id} call={call} />
+              ))}
+          </div>
+        ) : (
+          <div className="flex flex-1 items-center justify-center bg-muted/10 px-6 py-12 text-sm text-muted-foreground">
+            No activity yet. Calls and interactions will appear here.
+          </div>
+        )}
+      </TabsContent>
+
+      <TabsContent value="calls" className="flex flex-1 flex-col">
+        <CallsList calls={calls} />
       </TabsContent>
 
       <TabsContent value="emails" className="flex flex-1 flex-col">

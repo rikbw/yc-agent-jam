@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, DealStage, Industry } from "../../src/generated/prisma/client";
+import { PrismaClient, DealStage, Industry, CallOutcome, MessageRole } from "../../src/generated/prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -108,6 +108,54 @@ const geographies = [
   "UK",
 ];
 
+const callOutcomes = [
+  CallOutcome.productive,
+  CallOutcome.no_answer,
+  CallOutcome.voicemail,
+  CallOutcome.scheduled_meeting,
+  CallOutcome.not_interested,
+];
+
+const sampleConversations = [
+  {
+    messages: [
+      { role: MessageRole.assistant, text: "Hello, this is {banker} from the investment bank. I wanted to discuss potential opportunities for {company}." },
+      { role: MessageRole.user, text: "Hi, thanks for reaching out. What kind of opportunities are you referring to?" },
+      { role: MessageRole.assistant, text: "We specialize in M&A advisory and have seen strong buyer interest in the {industry} sector. I'd like to understand if you've considered an exit strategy." },
+      { role: MessageRole.user, text: "We haven't actively pursued it, but we're open to conversations. What would be the next steps?" },
+      { role: MessageRole.assistant, text: "Great! I'd suggest we schedule a more detailed call to discuss your business metrics and explore potential valuations." },
+    ]
+  },
+  {
+    messages: [
+      { role: MessageRole.assistant, text: "Good morning, I'm calling to follow up on our previous conversation about {company}." },
+      { role: MessageRole.user, text: "Yes, I remember. We've been thinking about it." },
+      { role: MessageRole.assistant, text: "Excellent. Have you had a chance to review the market analysis I sent over?" },
+      { role: MessageRole.user, text: "I did, and it's quite interesting. The multiples you mentioned are higher than I expected." },
+      { role: MessageRole.assistant, text: "The market is very favorable right now. Would you be available next week to discuss this in more detail with our team?" },
+      { role: MessageRole.user, text: "Yes, let's set something up." },
+    ]
+  },
+  {
+    messages: [
+      { role: MessageRole.assistant, text: "Hi, I wanted to touch base about the proposal we sent last week." },
+      { role: MessageRole.user, text: "I've been reviewing it with my co-founders. We have some questions about the timeline." },
+      { role: MessageRole.assistant, text: "Of course, I'm happy to address any questions. What specific concerns do you have about the timeline?" },
+      { role: MessageRole.user, text: "The due diligence period seems quite short. We're worried about disrupting operations." },
+      { role: MessageRole.assistant, text: "That's a valid concern. We can certainly be flexible on the timeline to ensure minimal disruption. Let me propose a revised schedule." },
+    ]
+  },
+  {
+    messages: [
+      { role: MessageRole.assistant, text: "This is {banker} calling about our M&A services. Is now a good time?" },
+      { role: MessageRole.user, text: "Actually, we're not interested in selling at the moment." },
+      { role: MessageRole.assistant, text: "I understand. May I ask what your long-term plans are for the business?" },
+      { role: MessageRole.user, text: "We're focused on growth right now and aren't considering an exit." },
+      { role: MessageRole.assistant, text: "That makes sense. Would it be okay if I checked back in 6 months to see if anything has changed?" },
+    ]
+  },
+];
+
 const activeDealStages: Set<DealStage> = new Set([
   DealStage.pitch_meeting_planned,
   DealStage.proposal_sent,
@@ -137,6 +185,8 @@ async function seed() {
   // Clear existing data (skip if tables don't exist yet)
   console.log("🧹 Clearing existing data...");
   try {
+    await prisma.message.deleteMany();
+    await prisma.call.deleteMany();
     await prisma.sellerCompany.deleteMany();
     await prisma.banker.deleteMany();
   } catch (error) {
@@ -158,6 +208,8 @@ async function seed() {
   // Create seller companies
   console.log("🏢 Creating seller companies...");
   const count = 55;
+  const createdCompanies: Array<{ id: string; name: string; industry: string; ownerBankerId: string; ownerBankerName: string }> = [];
+
   for (let i = 0; i < count; i++) {
     const revenue = randomNumber(500_000, 50_000_000);
     const ebitdaMargin = randomNumber(10, 35) / 100;
@@ -185,10 +237,11 @@ async function seed() {
       ? Math.floor(revenue * randomNumber(3, 12))
       : undefined;
 
-    await prisma.sellerCompany.create({
+    const industry = randomElement(industries);
+    const company = await prisma.sellerCompany.create({
       data: {
         name: companyName,
-        industry: randomElement(industries),
+        industry,
         revenue,
         ebitda,
         headcount: randomNumber(5, 500),
@@ -203,8 +256,104 @@ async function seed() {
         createdAt: randomDate(randomNumber(30, 365)),
       },
     });
+
+    createdCompanies.push({
+      id: company.id,
+      name: company.name,
+      industry: industry,
+      ownerBankerId: banker.id,
+      ownerBankerName: banker.name,
+    });
   }
   console.log(`✅ Created ${count} seller companies`);
+
+  // Create calls and messages for each company
+  console.log("📞 Creating calls and messages...");
+  let totalCalls = 0;
+  let totalMessages = 0;
+
+  for (const company of createdCompanies) {
+    const callCount = randomNumber(2, 5);
+
+    for (let i = 0; i < callCount; i++) {
+      const outcome = randomElement(callOutcomes);
+      const conversation = randomElement(sampleConversations);
+      const callDate = randomDate(90);
+      const duration = randomNumber(5, 45);
+
+      // Create the call
+      const call = await prisma.call.create({
+        data: {
+          sellerCompanyId: company.id,
+          bankerId: company.ownerBankerId,
+          callDate,
+          duration,
+          outcome,
+          notes: outcome === CallOutcome.scheduled_meeting
+            ? "Follow-up meeting scheduled for next week"
+            : outcome === CallOutcome.productive
+            ? "Positive conversation, showing interest in exploring options"
+            : outcome === CallOutcome.not_interested
+            ? "Not interested at this time, revisit in 6 months"
+            : outcome === CallOutcome.voicemail
+            ? "Left voicemail with callback details"
+            : "No answer, will try again later",
+        },
+      });
+
+      totalCalls++;
+
+      // Create messages for this call
+      if (outcome === CallOutcome.productive || outcome === CallOutcome.scheduled_meeting) {
+        // For productive calls, create a full conversation
+        let messageTime = new Date(callDate);
+
+        for (const msg of conversation.messages) {
+          const transcript = msg.text
+            .replace('{banker}', company.ownerBankerName)
+            .replace('{company}', company.name)
+            .replace('{industry}', company.industry);
+
+          await prisma.message.create({
+            data: {
+              callId: call.id,
+              role: msg.role,
+              transcript,
+              timestamp: new Date(messageTime),
+            },
+          });
+
+          totalMessages++;
+          // Add 10-30 seconds between messages
+          messageTime = new Date(messageTime.getTime() + randomNumber(10, 30) * 1000);
+        }
+      } else if (outcome === CallOutcome.no_answer) {
+        // For no answer, just the initial greeting
+        await prisma.message.create({
+          data: {
+            callId: call.id,
+            role: MessageRole.assistant,
+            transcript: `Hello, this is ${company.ownerBankerName} calling for ${company.name}. Please give me a call back at your earliest convenience.`,
+            timestamp: callDate,
+          },
+        });
+        totalMessages++;
+      } else if (outcome === CallOutcome.voicemail) {
+        // For voicemail, leave a message
+        await prisma.message.create({
+          data: {
+            callId: call.id,
+            role: MessageRole.assistant,
+            transcript: `Hi, this is ${company.ownerBankerName} from the investment bank. I wanted to discuss some M&A opportunities for ${company.name}. Please call me back when you have a moment.`,
+            timestamp: callDate,
+          },
+        });
+        totalMessages++;
+      }
+    }
+  }
+
+  console.log(`✅ Created ${totalCalls} calls with ${totalMessages} messages`);
 
   console.log("✨ Seed completed successfully!");
 }
