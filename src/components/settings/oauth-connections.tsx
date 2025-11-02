@@ -87,9 +87,10 @@ export function OAuthConnections() {
     try {
       const result = await createOAuthSession(serviceId);
       
-      // Calendly doesn't need OAuth flow
+      // Calendly doesn't use OAuth flow
       if (serviceId === 'calendly') {
-        setStatuses(prev => ({ ...prev, [serviceId]: { isConnected: true, loading: false } }));
+        setStatuses(prev => ({ ...prev, [serviceId]: { isConnected: false, loading: false } }));
+        alert(result.error || 'Calendly authentication is managed via access token in Metorial dashboard');
         return;
       }
       
@@ -222,8 +223,12 @@ export function OAuthConnections() {
                 </div>
                 <div>
                   {status.isConnected ? (
-                    // Hide disconnect button for Calendly - it's managed by Metorial
-                    service.id !== 'calendly' ? (
+                    // Calendly is always connected via access token - show badge instead of disconnect
+                    service.id === 'calendly' ? (
+                      <Badge variant="default" className="text-xs">
+                        Configured via Access Token
+                      </Badge>
+                    ) : (
                       <Button
                         variant="outline"
                         size="sm"
@@ -233,10 +238,6 @@ export function OAuthConnections() {
                         {status.loading && <Loader2 className="mr-2 size-4 animate-spin" />}
                         Disconnect
                       </Button>
-                    ) : (
-                      <Badge variant="secondary" className="text-xs">
-                        Managed by Metorial
-                      </Badge>
                     )
                   ) : (
                     <Button

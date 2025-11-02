@@ -35,9 +35,32 @@ export async function runMetorialConversation(userMessage: string) {
       };
     }
 
+    // Get current date/time for context
+    const now = new Date();
+    const dateContext = `Current date and time: ${now.toLocaleString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    })}`;
+
+    // Enhance message with date context and instructions
+    const enhancedMessage = `${dateContext}
+
+Important: When working with dates and times:
+- Always use future dates and times, never past dates
+- When a day of the week is mentioned (e.g., "Wednesday"), calculate the NEXT occurrence of that day
+- Add a small buffer (e.g., 1 hour from now) to avoid timezone edge cases
+- For Calendly queries, ensure start times are at least 1 hour in the future
+
+User request: ${userMessage}`;
+
     // Use the simple .run() method which handles everything
     const result = await metorial.run({
-      message: userMessage,
+      message: enhancedMessage,
       serverDeployments: oauthSessions.map(s => {
         // Only include oauthSessionId if it exists (Calendly doesn't need it)
         const deployment: any = { serverDeploymentId: s.serverDeploymentId };
