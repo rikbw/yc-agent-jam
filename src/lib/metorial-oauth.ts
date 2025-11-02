@@ -195,8 +195,16 @@ export async function getActiveOAuthSessions() {
  */
 export async function disconnectOAuthSession(service: 'gmail' | 'google_calendar' | 'calendly') {
   try {
-    // Calendly is managed by Metorial - we can't disconnect it locally but we'll allow the action
+    // Calendly doesn't create OAuth sessions in Metorial - auth is managed differently
     if (service === 'calendly') {
+      // Just update local status since there's no actual OAuth session to delete
+      const banker = await getDefaultBanker();
+      const sessionKey = getSessionKey(banker.id, service);
+      const session = oauthSessions.get(sessionKey);
+      if (session) {
+        session.status = 'expired';
+        oauthSessions.set(sessionKey, session);
+      }
       return { success: true };
     }
 
@@ -204,10 +212,23 @@ export async function disconnectOAuthSession(service: 'gmail' | 'google_calendar
     const sessionKey = getSessionKey(banker.id, service);
     const session = oauthSessions.get(sessionKey);
 
-    if (session) {
-      session.status = 'expired';
-      oauthSessions.set(sessionKey, session);
+    if (!session) {
+      return { success: true }; // Already disconnected
     }
+
+    // Delete from Metorial API if we have an oauthSessionId
+    if (session.oauthSessionId) {
+      try {
+        await metorial.oauth.sessions.delete(session.oauthSessionId);
+      } catch (error) {
+        console.error('Error deleting OAuth session from Metorial:', error);
+        // Continue with local cleanup even if remote delete fails
+      }
+    }
+
+    // Update local status
+    session.status = 'expired';
+    oauthSessions.set(sessionKey, session);
 
     return { success: true };
   } catch (error) {
