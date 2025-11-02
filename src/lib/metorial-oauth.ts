@@ -19,10 +19,6 @@ const openai = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
 });
 
-// Local types
-type OAuthService = 'gmail' | 'google_calendar';
-type OAuthStatus = 'pending' | 'active' | 'expired';
-
 /**
  * Creates OAuth session and returns OAuth URL for user authentication
  */
@@ -189,9 +185,9 @@ export async function runMetorialConversation(userMessage: string) {
         serverDeploymentId: s.serverDeploymentId,
         oauthSessionId: s.oauthSessionId
       })),
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini',
       client: openai,
-      maxSteps: 5
+      maxSteps: 30
     });
 
     return {

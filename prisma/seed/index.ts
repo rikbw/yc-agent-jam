@@ -365,47 +365,116 @@ async function seed() {
   // Create actions for each company
   console.log("📅 Creating actions...");
   let totalActions = 0;
+  let totalCompletedActions = 0;
 
   for (const company of createdCompanies) {
-    // Each company gets 1-2 actions
+    // Each company gets 1-2 pending actions
     const actionCount = randomNumber(1, 2);
 
     for (let i = 0; i < actionCount; i++) {
+      // 30% chance this is an email task instead of call
+      const isEmailAction = Math.random() < 0.3;
+      const actionType = isEmailAction ? ActionType.email : ActionType.call;
+
       // Determine if this is an overdue, current, or future action
       const actionTiming = randomNumber(1, 100);
       let scheduledFor: Date;
       let description: string;
+      let title: string;
 
-      if (actionTiming <= 20) {
-        // 20% chance: Overdue action (1-5 days ago)
-        scheduledFor = randomDate(5);
-        description = `Overdue follow-up from previous call. Need to reconnect with ${company.name}.`;
-      } else if (actionTiming <= 40) {
-        // 20% chance: Today or tomorrow
-        scheduledFor = randomNumber(1, 2) === 1 ? new Date() : new Date(Date.now() + 24 * 60 * 60 * 1000);
-        description = `Scheduled follow-up call to discuss next steps with ${company.name}.`;
+      if (isEmailAction) {
+        if (actionTiming <= 20) {
+          // 20% chance: Overdue action (1-5 days ago)
+          scheduledFor = randomDate(5);
+          description = `Send follow-up email with updated deal materials to ${company.name}.`;
+          title = `Send follow-up email to ${company.name}`;
+        } else if (actionTiming <= 40) {
+          // 20% chance: Today or tomorrow
+          scheduledFor = randomNumber(1, 2) === 1 ? new Date() : new Date(Date.now() + 24 * 60 * 60 * 1000);
+          description = `Send proposal and market analysis to ${company.name}.`;
+          title = `Send proposal to ${company.name}`;
+        } else {
+          // 60% chance: Future action (1-30 days)
+          scheduledFor = randomFutureDate(30);
+          description = `Send quarterly check-in email to ${company.name} about market conditions.`;
+          title = `Send check-in email to ${company.name}`;
+        }
       } else {
-        // 60% chance: Future action (1-30 days)
-        scheduledFor = randomFutureDate(30);
-        description = `Follow-up call scheduled to check in on ${company.name}'s interest and timeline.`;
+        if (actionTiming <= 20) {
+          // 20% chance: Overdue action (1-5 days ago)
+          scheduledFor = randomDate(5);
+          description = `Overdue follow-up from previous call. Need to reconnect with ${company.name}.`;
+          title = `Follow-up call with ${company.name}`;
+        } else if (actionTiming <= 40) {
+          // 20% chance: Today or tomorrow
+          scheduledFor = randomNumber(1, 2) === 1 ? new Date() : new Date(Date.now() + 24 * 60 * 60 * 1000);
+          description = `Scheduled follow-up call to discuss next steps with ${company.name}.`;
+          title = `Follow-up call with ${company.name}`;
+        } else {
+          // 60% chance: Future action (1-30 days)
+          scheduledFor = randomFutureDate(30);
+          description = `Follow-up call scheduled to check in on ${company.name}'s interest and timeline.`;
+          title = `Follow-up call with ${company.name}`;
+        }
       }
 
       await prisma.action.create({
         data: {
           sellerCompanyId: company.id,
-          actionType: ActionType.call,
+          actionType,
           scheduledFor,
           status: ActionStatus.pending,
-          title: `Follow-up call with ${company.name}`,
+          title,
           description,
         },
       });
 
       totalActions++;
     }
+
+    // 60% chance to have 1-2 completed actions
+    if (Math.random() < 0.6) {
+      const completedCount = randomNumber(1, 2);
+
+      for (let i = 0; i < completedCount; i++) {
+        const isEmailAction = Math.random() < 0.4;
+        const actionType = isEmailAction ? ActionType.email : ActionType.call;
+
+        // Completed actions from 1-14 days ago
+        const scheduledFor = randomDate(14);
+        // Updated timestamp to show recent completion (within 1-7 days)
+        const updatedAt = new Date(scheduledFor.getTime() + randomNumber(1, 7) * 24 * 60 * 60 * 1000);
+
+        let title: string;
+        let description: string;
+
+        if (isEmailAction) {
+          title = `Sent proposal to ${company.name}`;
+          description = `Sent detailed proposal and market analysis via email.`;
+        } else {
+          title = `Completed call with ${company.name}`;
+          description = `Had productive conversation about their interest in M&A opportunities.`;
+        }
+
+        await prisma.action.create({
+          data: {
+            sellerCompanyId: company.id,
+            actionType,
+            scheduledFor,
+            status: ActionStatus.completed,
+            title,
+            description,
+            updatedAt,
+          },
+        });
+
+        totalCompletedActions++;
+      }
+    }
   }
 
-  console.log(`✅ Created ${totalActions} actions`);
+  console.log(`✅ Created ${totalActions} pending actions`);
+  console.log(`✅ Created ${totalCompletedActions} completed actions`);
 
   console.log("✨ Seed completed successfully!");
 }

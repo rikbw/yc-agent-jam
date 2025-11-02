@@ -1,13 +1,15 @@
 import { runMetorialConversation } from "../metorial-oauth";
 import { prisma } from "../prisma";
 
+const calendarId = "rikbauwens1@gmail.com";
+
 // Tool definitions for Vapi - just one calendar tool that handles everything
 export const vapiTools = [
   {
     type: "function" as const,
     function: {
       name: "check_calendar",
-      description: "Check availability, find free time slots, and manage calendar for the banker. Use this to answer questions about availability, schedule meetings, or check the calendar.",
+      description: `Check availability, find free time slots, and manage calendar for the banker. Use this to answer questions about availability, schedule meetings, or check the calendar. Always add in the prompt to the tool to use the calendar ID '${calendarId}'. When booking meetings, add a bunch of context in the request, like meeting title, description, time, who to invite, etc.`,
       parameters: {
         type: "object",
         properties: {
