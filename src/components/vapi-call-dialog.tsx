@@ -338,7 +338,8 @@ Owner: ${companyData.ownerBankerName}
         backgroundSound: "office",
         // Maximum call duration (15 minutes)
         maxDurationSeconds: 900,
-        name: `${companyData.name} Sales Call`,
+        // Ensure name is max 40 chars (Vapi requirement)
+        name: `${companyData.name.substring(0, 28)} Sales Call`.substring(0, 40),
         firstMessage: firstMessage,
       });
     } catch (error: any) {
