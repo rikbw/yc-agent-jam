@@ -210,6 +210,8 @@ For each company, provide accurate and complete information. Use your real-time 
         logo_url: z.string().nullable().optional().describe('Company logo URL'),
       })),
     });
+    
+    console.log("DEBUG prompt for Perplexity:", prompt);
 
     const { object } = await generateObject({
       model: openrouter('perplexity/sonar-pro-search'),
