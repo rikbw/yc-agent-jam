@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { CompanyLogo } from "@/components/company-logo";
+import { CompanyCallButton } from "@/components/company-call-button";
 import type { Call } from "@/types/call";
 import {
   Breadcrumb,
@@ -30,12 +31,7 @@ import {
   type DealStage,
 } from "@/types/seller";
 import { notFound } from "next/navigation";
-import {
-  ExternalLink,
-  Plus,
-  Send,
-  Settings2,
-} from "lucide-react";
+import { ExternalLink } from "lucide-react";
 
 interface CompanyDetailPageProps {
   params: Promise<{
@@ -312,20 +308,7 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm">
-                  <Plus className="size-4" />
-                  Add to List
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Settings2 className="size-4" />
-                  Run workflow
-                </Button>
-                <Button size="sm">
-                  <Send className="size-4" />
-                  Compose email
-                </Button>
-              </div>
+              <CompanyCallButton companyData={company} />
             </div>
           </div>
 
