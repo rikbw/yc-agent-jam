@@ -180,13 +180,18 @@ export function OAuthConnections() {
         <div className="border rounded-lg overflow-hidden">
           {SERVICES.map((service, index) => {
             const status = statuses[service.id] || { isConnected: false, loading: false };
-            const Icon = service.icon;
 
             return (
               <div key={service.id} className={`flex items-center justify-between p-3 bg-muted/30 ${index !== SERVICES.length - 1 ? 'border-b' : ''}`}>
                 <div className="flex items-center gap-3">
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-background">
-                    <Icon className="size-4" />
+                  <div className="flex size-8 items-center justify-center rounded-lg bg-background p-1.5">
+                    <Image
+                      src={service.iconUrl}
+                      alt={service.name}
+                      width={32}
+                      height={32}
+                      className="size-full"
+                    />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
