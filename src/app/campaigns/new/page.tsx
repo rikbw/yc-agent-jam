@@ -90,8 +90,8 @@ export default function NewCampaignPage() {
             </BreadcrumbList>
           </Breadcrumb>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-1 flex-col gap-3 p-4">
+          <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
@@ -101,55 +101,38 @@ export default function NewCampaignPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Review Campaign Parameters</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-2xl font-bold tracking-tight">Review Campaign Parameters</h1>
+              <p className="text-sm text-muted-foreground">
                 Review and adjust the generated search parameters before creating the campaign.
               </p>
             </div>
           </div>
 
-          <div className="grid gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Campaign Details</CardTitle>
-                <CardDescription>
-                  These details will be used to create the campaign.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h3 className="font-semibold mb-1">Name</h3>
-                  <p className="text-sm text-muted-foreground">{name}</p>
-                </div>
-                {description && (
-                  <div>
-                    <h3 className="font-semibold mb-1">Description</h3>
-                    <p className="text-sm text-muted-foreground">{description}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold mb-1">Campaign Name</h3>
+              <p className="text-sm text-muted-foreground">{name}</p>
+            </div>
+            {description && (
+              <div>
+                <h3 className="text-sm font-semibold mb-1">Description</h3>
+                <p className="text-sm text-muted-foreground">{description}</p>
+              </div>
+            )}
+          </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Generated Search Parameters</CardTitle>
-                <CardDescription>
-                  These parameters will be used to search for companies in Apollo.io. You can edit them below.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={params}
-                  onChange={(e) => setParams(e.target.value)}
-                  className="font-mono text-sm min-h-[400px]"
-                  placeholder="Search parameters in JSON format..."
-                  disabled={isCreating}
-                />
-                <p className="text-xs text-muted-foreground mt-2">
-                  Edit the JSON above to adjust search parameters. Make sure the JSON is valid.
-                </p>
-              </CardContent>
-            </Card>
+          <div>
+            <h3 className="text-sm font-semibold mb-2">Search Parameters</h3>
+            <Textarea
+              value={params}
+              onChange={(e) => setParams(e.target.value)}
+              className="font-mono text-xs min-h-[400px]"
+              placeholder="Search parameters in JSON format..."
+              disabled={isCreating}
+            />
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Edit the JSON above to adjust search parameters. Make sure the JSON is valid.
+            </p>
           </div>
 
           <div className="flex gap-2 justify-end">
