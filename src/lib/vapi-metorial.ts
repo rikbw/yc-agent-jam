@@ -35,16 +35,43 @@ export async function runMetorialConversation(userMessage: string) {
       };
     }
 
+    // Get current date/time for context
+    const now = new Date();
+    const dateContext = `Current date and time: ${now.toLocaleString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    })}`;
+
+    // Enhance message with date context and instructions
+    const enhancedMessage = `${dateContext}
+
+Important: When working with dates and times:
+- Always use future dates and times, never past dates
+- When a day of the week is mentioned (e.g., "Wednesday"), calculate the NEXT occurrence of that day
+- Add a small buffer (e.g., 1 hour from now) to avoid timezone edge cases
+- For Calendly queries, ensure start times are at least 1 hour in the future
+
+User request: ${userMessage}`;
+
     // Use the simple .run() method which handles everything
     const result = await metorial.run({
-      message: userMessage,
-      serverDeployments: oauthSessions.map(s => ({
-        serverDeploymentId: s.serverDeploymentId,
-        oauthSessionId: s.oauthSessionId
-      })),
+      message: enhancedMessage,
+      serverDeployments: oauthSessions.map(s => {
+        // Only include oauthSessionId if it exists (Calendly doesn't need it)
+        const deployment: any = { serverDeploymentId: s.serverDeploymentId };
+        if (s.oauthSessionId) {
+          deployment.oauthSessionId = s.oauthSessionId;
+        }
+        return deployment;
+      }),
       model: 'gpt-4o-mini',
       client: openai,
-      maxSteps: 5
+      maxSteps: 15 // Increased to handle complex multi-step queries
     });
 
     return {
@@ -54,9 +81,16 @@ export async function runMetorialConversation(userMessage: string) {
     };
   } catch (error) {
     console.error('Metorial conversation error:', error);
+    
+    // Check if it's a max steps error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const isMaxStepsError = errorMessage.includes('Max steps') || errorMessage.includes('max steps');
+    
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: isMaxStepsError 
+        ? 'Query took too many steps to complete. Please try a simpler or more specific query.'
+        : errorMessage,
       response: ''
     };
   }
