@@ -63,7 +63,7 @@ export function CallActivityItem({ call }: CallActivityItemProps) {
   return (
     <div className="flex items-start gap-3 border-b p-4 last:border-b-0">
       <Avatar className="size-9 shrink-0 border border-border/60">
-        <AvatarFallback className="bg-blue-50 text-blue-700">
+        <AvatarFallback className="bg-muted/50">
           <Phone className="size-4" />
         </AvatarFallback>
       </Avatar>

@@ -148,14 +148,14 @@ export function CallItem({ call }: CallItemProps) {
                       }`}
                     >
                       <div
-                        className={`flex max-w-[80%] flex-col gap-1 rounded-lg px-3 py-2 ${
+                        className={`flex max-w-[80%] flex-col gap-1 rounded-lg px-3 py-2 border ${
                           message.role === "assistant"
-                            ? "bg-blue-50 text-blue-900"
-                            : "bg-green-50 text-green-900"
+                            ? "bg-muted/50"
+                            : "bg-background"
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-semibold uppercase">
+                          <span className="text-[10px] font-semibold uppercase text-muted-foreground">
                             {message.role === "assistant" ? "AI Agent" : "Contact"}
                           </span>
                           <span className="text-[10px] text-muted-foreground">
