@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Loader2, Mail, Calendar, CheckCircle2, XCircle, FlaskConical, Sparkles, ArrowRight } from "lucide-react";
+import { Loader2, Mail, Calendar, CheckCircle2, XCircle, FlaskConical, Sparkles, ArrowRight, CalendarCheck } from "lucide-react";
 import {
   createOAuthSession,
   getOAuthStatus,
@@ -16,7 +16,7 @@ import { getConnectionStatus } from "@/lib/metorial-session";
 import { runMetorialConversation } from "@/lib/vapi-metorial";
 
 type ServiceConfig = {
-  id: 'gmail' | 'google_calendar';
+  id: 'gmail' | 'google_calendar' | 'calendly';
   name: string;
   description: string;
   icon: typeof Mail;
@@ -34,6 +34,12 @@ const SERVICES: ServiceConfig[] = [
     name: 'Google Calendar',
     description: 'Schedule meetings and manage calendar',
     icon: Calendar
+  },
+  {
+    id: 'calendly',
+    name: 'Calendly',
+    description: 'Manage bookings and scheduling links',
+    icon: CalendarCheck
   }
 ];
 
@@ -75,11 +81,17 @@ export function OAuthConnections() {
     setStatuses(newStatuses);
   };
 
-  const handleConnect = async (serviceId: 'gmail' | 'google_calendar') => {
+  const handleConnect = async (serviceId: 'gmail' | 'google_calendar' | 'calendly') => {
     setStatuses(prev => ({ ...prev, [serviceId]: { ...prev[serviceId], loading: true } }));
 
     try {
       const result = await createOAuthSession(serviceId);
+      
+      // Calendly doesn't need OAuth flow
+      if (serviceId === 'calendly') {
+        setStatuses(prev => ({ ...prev, [serviceId]: { isConnected: true, loading: false } }));
+        return;
+      }
       
       if (!result.success || !result.oauthUrl || !result.sessionId) {
         throw new Error(result.error || 'Failed to create session');
@@ -112,7 +124,7 @@ export function OAuthConnections() {
     }
   };
 
-  const handleDisconnect = async (serviceId: 'gmail' | 'google_calendar') => {
+  const handleDisconnect = async (serviceId: 'gmail' | 'google_calendar' | 'calendly') => {
     setStatuses(prev => ({ ...prev, [serviceId]: { ...prev[serviceId], loading: true } }));
 
     const result = await disconnectOAuthSession(serviceId);
@@ -123,7 +135,9 @@ export function OAuthConnections() {
       setTestResult(null);
     } else {
       setStatuses(prev => ({ ...prev, [serviceId]: { ...prev[serviceId], loading: false } }));
-      alert(result.error || 'Failed to disconnect');
+      if (result.error) {
+        alert(result.error);
+      }
     }
   };
 
@@ -286,7 +300,7 @@ export function OAuthConnections() {
                   </div>
 
                   <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                    ✓ These OAuth sessions will be used by the AI agent to access your Gmail and Calendar
+                    These sessions will be used by the AI agent to access your Gmail, Calendar, and Calendly
                   </div>
                 </div>
               ) : (

@@ -11,10 +11,11 @@ const metorial = new Metorial({
 const SERVICE_DEPLOYMENT_MAP = {
   gmail: process.env.METORIAL_GMAIL_ID!,
   google_calendar: process.env.METORIAL_GCALENDAR_ID!,
+  calendly: process.env.METORIAL_CALENDLY_ID!,
 } as const;
 
 // Local types
-type OAuthService = 'gmail' | 'google_calendar';
+type OAuthService = 'gmail' | 'google_calendar' | 'calendly';
 type OAuthStatus = 'pending' | 'active' | 'expired';
 
 interface OAuthSessionData {
@@ -45,8 +46,16 @@ function findSessionById(sessionId: string): OAuthSessionData | undefined {
 /**
  * Creates OAuth session and returns OAuth URL for user authentication
  */
-export async function createOAuthSession(service: 'gmail' | 'google_calendar') {
+export async function createOAuthSession(service: 'gmail' | 'google_calendar' | 'calendly') {
   try {
+    // Calendly doesn't need OAuth - Metorial handles auth internally
+    if (service === 'calendly') {
+      return {
+        success: false,
+        error: 'Calendly authentication is handled by Metorial. No OAuth flow needed.'
+      };
+    }
+
     const banker = await getDefaultBanker();
     const serverDeploymentId = SERVICE_DEPLOYMENT_MAP[service];
 
@@ -128,8 +137,17 @@ export async function waitForOAuthCompletion(sessionId: string) {
 /**
  * Get OAuth session status for a service
  */
-export async function getOAuthStatus(service: 'gmail' | 'google_calendar') {
+export async function getOAuthStatus(service: 'gmail' | 'google_calendar' | 'calendly') {
   try {
+    // Calendly is always connected - Metorial handles auth internally
+    if (service === 'calendly') {
+      return {
+        isConnected: true,
+        status: 'active' as const,
+        sessionId: null
+      };
+    }
+
     const banker = await getDefaultBanker();
     const sessionKey = getSessionKey(banker.id, service);
     const session = oauthSessions.get(sessionKey);
@@ -150,15 +168,22 @@ export async function getOAuthStatus(service: 'gmail' | 'google_calendar') {
  */
 export async function getActiveOAuthSessions() {
   const banker = await getDefaultBanker();
-  const activeSessions: OAuthSessionData[] = [];
+  const activeSessions: (OAuthSessionData | { serverDeploymentId: string; service: 'calendly'; oauthSessionId?: undefined })[] = [];
 
+  // Add Calendly - always active, no OAuth session needed
+  activeSessions.push({
+    serverDeploymentId: SERVICE_DEPLOYMENT_MAP.calendly,
+    service: 'calendly'
+  });
+
+  // Add other OAuth sessions
   for (const session of oauthSessions.values()) {
     if (session.bankerId === banker.id && session.status === 'active') {
       activeSessions.push(session);
     }
   }
 
-  return activeSessions.map((s: OAuthSessionData) => ({
+  return activeSessions.map((s: any) => ({
     serverDeploymentId: s.serverDeploymentId,
     oauthSessionId: s.oauthSessionId,
     service: s.service
@@ -168,8 +193,16 @@ export async function getActiveOAuthSessions() {
 /**
  * Disconnect OAuth session
  */
-export async function disconnectOAuthSession(service: 'gmail' | 'google_calendar') {
+export async function disconnectOAuthSession(service: 'gmail' | 'google_calendar' | 'calendly') {
   try {
+    // Calendly can't be disconnected - it's handled by Metorial
+    if (service === 'calendly') {
+      return {
+        success: false,
+        error: 'Calendly connection cannot be disconnected. Authentication is managed by Metorial.'
+      };
+    }
+
     const banker = await getDefaultBanker();
     const sessionKey = getSessionKey(banker.id, service);
     const session = oauthSessions.get(sessionKey);
