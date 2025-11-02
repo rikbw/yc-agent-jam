@@ -256,7 +256,7 @@ Owner: ${companyData.ownerBankerName}
               content: systemPrompt,
             },
           ],
-          tools: vapiTools
+          tools: vapiTools as any
         },
         voice: {
           provider: "11labs",

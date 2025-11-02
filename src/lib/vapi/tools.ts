@@ -22,7 +22,7 @@ export type FindFreeMeetingSlotParams = z.infer<typeof findFreeMeetingSlotSchema
 export type BookMeetingSlotParams = z.infer<typeof bookMeetingSlotSchema>;
 
 // Helper to remove $schema property from generated JSON Schema
-const cleanJsonSchema = (schema: any) => {
+const cleanJsonSchema = (schema: { $schema?: string; type? }) => {
   const { $schema, ...cleaned } = schema;
   return cleaned;
 };
