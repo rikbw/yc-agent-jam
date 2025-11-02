@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Loader2, Mail, Calendar, CheckCircle2, XCircle, FlaskConical, Sparkles, ArrowRight } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, FlaskConical, Sparkles, ArrowRight } from "lucide-react";
 import {
   createOAuthSession,
   getOAuthStatus,
@@ -14,12 +13,13 @@ import {
   runMetorialConversation
 } from "@/lib/metorial-oauth";
 import { getConnectionStatus } from "@/lib/metorial-session";
+import Image from "next/image";
 
 type ServiceConfig = {
   id: 'gmail' | 'google_calendar';
   name: string;
   description: string;
-  icon: typeof Mail;
+  iconUrl: string;
 };
 
 const SERVICES: ServiceConfig[] = [
@@ -27,13 +27,13 @@ const SERVICES: ServiceConfig[] = [
     id: 'gmail',
     name: 'Gmail',
     description: 'Send emails on your behalf',
-    icon: Mail
+    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg'
   },
   {
     id: 'google_calendar',
     name: 'Google Calendar',
     description: 'Schedule meetings and manage calendar',
-    icon: Calendar
+    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg'
   }
 ];
 
@@ -169,41 +169,41 @@ export function OAuthConnections() {
   const hasAnyConnection = Object.values(statuses).some(s => s.isConnected);
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>OAuth Integrations</CardTitle>
-          <CardDescription>
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <div>
+          <h2 className="text-lg font-semibold">OAuth Integrations</h2>
+          <p className="text-sm text-muted-foreground">
             Connect your accounts to enable AI agent capabilities
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {SERVICES.map(service => {
+          </p>
+        </div>
+        <div className="border rounded-lg overflow-hidden">
+          {SERVICES.map((service, index) => {
             const status = statuses[service.id] || { isConnected: false, loading: false };
             const Icon = service.icon;
 
             return (
-              <div key={service.id} className="flex items-center justify-between border rounded-lg p-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
-                    <Icon className="size-5" />
+              <div key={service.id} className={`flex items-center justify-between p-3 bg-muted/30 ${index !== SERVICES.length - 1 ? 'border-b' : ''}`}>
+                <div className="flex items-center gap-3">
+                  <div className="flex size-8 items-center justify-center rounded-lg bg-background">
+                    <Icon className="size-4" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">{service.name}</h3>
+                      <h3 className="text-sm font-medium">{service.name}</h3>
                       {status.isConnected ? (
-                        <Badge variant="default" className="gap-1">
+                        <Badge variant="default" className="gap-1 text-[10px] h-5">
                           <CheckCircle2 className="size-3" />
                           Connected
                         </Badge>
                       ) : (
-                        <Badge variant="secondary" className="gap-1">
+                        <Badge variant="secondary" className="gap-1 text-[10px] h-5">
                           <XCircle className="size-3" />
                           Not Connected
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">{service.description}</p>
+                    <p className="text-xs text-muted-foreground">{service.description}</p>
                   </div>
                 </div>
                 <div>
@@ -213,8 +213,9 @@ export function OAuthConnections() {
                       size="sm"
                       onClick={() => handleDisconnect(service.id)}
                       disabled={status.loading}
+                      className="h-7 text-xs"
                     >
-                      {status.loading && <Loader2 className="mr-2 size-4 animate-spin" />}
+                      {status.loading && <Loader2 className="mr-1.5 size-3 animate-spin" />}
                       Disconnect
                     </Button>
                   ) : (
@@ -222,8 +223,9 @@ export function OAuthConnections() {
                       size="sm"
                       onClick={() => handleConnect(service.id)}
                       disabled={status.loading}
+                      className="h-7 text-xs"
                     >
-                      {status.loading && <Loader2 className="mr-2 size-4 animate-spin" />}
+                      {status.loading && <Loader2 className="mr-1.5 size-3 animate-spin" />}
                       Connect
                     </Button>
                   )}
@@ -231,52 +233,51 @@ export function OAuthConnections() {
               </div>
             );
           })}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {hasAnyConnection && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Test Connection</CardTitle>
-                <CardDescription>
-                  Verify your OAuth connections and view available tools
-                </CardDescription>
-              </div>
-              <Button
-                onClick={handleTestConnection}
-                disabled={testing}
-                size="sm"
-              >
-                {testing && <Loader2 className="mr-2 size-4 animate-spin" />}
-                <FlaskConical className="mr-2 size-4" />
-                Test Connection
-              </Button>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">Test Connection</h2>
+              <p className="text-sm text-muted-foreground">
+                Verify your OAuth connections and view available tools
+              </p>
             </div>
-          </CardHeader>
+            <Button
+              onClick={handleTestConnection}
+              disabled={testing}
+              size="sm"
+              className="h-7 text-xs"
+            >
+              {testing && <Loader2 className="mr-1.5 size-3 animate-spin" />}
+              <FlaskConical className="mr-1.5 size-3" />
+              Test Connection
+            </Button>
+          </div>
           {testResult && (
-            <CardContent>
+            <div className="border rounded-lg p-3 bg-muted/30">
               {testResult.success ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="size-4 text-green-600" />
                     <span className="font-medium">OAuth sessions are active and ready!</span>
                   </div>
-                  
+
                   <div>
-                    <p className="text-sm font-medium mb-2">Connected Services ({testResult.connectedServices.length}):</p>
-                    <div className="space-y-2">
+                    <p className="text-xs font-medium mb-2 text-muted-foreground">Connected Services ({testResult.connectedServices.length}):</p>
+                    <div className="space-y-1.5">
                       {testResult.connectedServices.map(conn => (
                         <div
                           key={conn.service}
-                          className="border rounded-lg p-3 bg-muted/30"
+                          className="border rounded p-2 bg-background"
                         >
                           <div className="flex items-center justify-between">
-                            <div className="font-medium text-sm">
+                            <div className="font-medium text-xs">
                               {conn.service.replace('_', ' ')}
                             </div>
-                            <Badge variant="outline" className="font-mono text-xs">
+                            <Badge variant="outline" className="font-mono text-[10px] h-5">
                               {conn.serverDeploymentId.substring(0, 12)}...
                             </Badge>
                           </div>
@@ -285,7 +286,7 @@ export function OAuthConnections() {
                     </div>
                   </div>
 
-                  <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded border">
                     ✓ These OAuth sessions will be used by the AI agent to access your Gmail and Calendar
                   </div>
                 </div>
@@ -300,23 +301,23 @@ export function OAuthConnections() {
                   </div>
                 </div>
               )}
-            </CardContent>
+            </div>
           )}
-        </Card>
+        </div>
       )}
 
       {hasAnyConnection && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="size-5" />
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Sparkles className="size-4" />
               Test with AI
-            </CardTitle>
-            <CardDescription>
+            </h2>
+            <p className="text-sm text-muted-foreground">
               Try a prompt with OpenAI + your connected tools
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            </p>
+          </div>
+          <div className="space-y-3">
             <div className="flex gap-2">
               <Input
                 placeholder="e.g., What are my next 3 calendar events?"
@@ -328,38 +329,41 @@ export function OAuthConnections() {
                   }
                 }}
                 disabled={aiTesting}
+                className="h-8 text-sm"
               />
               <Button
                 onClick={handleAiTest}
                 disabled={aiTesting || !aiPrompt.trim()}
+                size="sm"
+                className="h-8 w-8 p-0"
               >
                 {aiTesting ? (
-                  <Loader2 className="size-4 animate-spin" />
+                  <Loader2 className="size-3 animate-spin" />
                 ) : (
-                  <ArrowRight className="size-4" />
+                  <ArrowRight className="size-3" />
                 )}
               </Button>
             </div>
 
             {aiResult && (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {aiResult.success ? (
-                  <div className="rounded-lg bg-green-50 dark:bg-green-950/20 p-4 border border-green-200 dark:border-green-800">
+                  <div className="rounded-lg bg-muted/50 p-3 border">
                     <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle2 className="size-4 text-green-600" />
-                      <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                      <CheckCircle2 className="size-3 text-green-600" />
+                      <p className="text-xs font-medium">
                         Response {aiResult.steps && `(completed in ${aiResult.steps} steps)`}:
                       </p>
                     </div>
-                    <p className="text-sm text-green-800 dark:text-green-200 whitespace-pre-wrap">
+                    <p className="text-xs whitespace-pre-wrap">
                       {aiResult.response}
                     </p>
                   </div>
                 ) : (
-                  <div className="flex items-start gap-2 text-sm text-red-600 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800 p-3">
-                    <XCircle className="size-4 mt-0.5 flex-shrink-0" />
+                  <div className="flex items-start gap-2 text-sm text-red-600 rounded-lg border p-2 bg-muted/30">
+                    <XCircle className="size-3 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="font-medium">AI test failed</p>
+                      <p className="font-medium text-xs">AI test failed</p>
                       {aiResult.error && (
                         <p className="text-xs mt-1">{aiResult.error}</p>
                       )}
@@ -369,7 +373,7 @@ export function OAuthConnections() {
               </div>
             )}
 
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded border">
               <p className="font-medium mb-1">Try these examples:</p>
               <ul className="list-disc list-inside space-y-0.5">
                 <li>What are my next 3 calendar events?</li>
@@ -377,8 +381,8 @@ export function OAuthConnections() {
                 <li>List my recent emails</li>
               </ul>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   );
