@@ -12,6 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 
 export type Campaign = {
   id: string;
@@ -27,10 +28,14 @@ export const columns: ColumnDef<Campaign>[] = [
     accessorKey: "name",
     header: "Campaign Name",
     cell: ({ row }) => {
+      const campaign = row.original;
       return (
-        <div className="flex flex-col">
-          <span className="font-medium">{row.getValue("name")}</span>
-        </div>
+        <Link
+          href={`/campaigns/${campaign.id}`}
+          className="font-medium hover:underline"
+        >
+          {row.getValue("name")}
+        </Link>
       );
     },
   },
