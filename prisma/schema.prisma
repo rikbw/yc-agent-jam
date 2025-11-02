@@ -55,16 +55,6 @@ enum MessageRole {
   system
 }
 
-enum OAuthService {
-  gmail
-  google_calendar
-  calendly
-}
-
-enum OAuthStatus {
-  pending
-  active
-  expired
 enum ActionType {
   call
 }
@@ -94,7 +84,6 @@ model Banker {
   updatedAt     DateTime        @updatedAt
   sellers       SellerCompany[]
   calls         Call[]
-  oauthSessions OAuthSession[]
 
   @@map("bankers")
 }
@@ -155,20 +144,6 @@ model Message {
 
   @@map("messages")
 }
-
-model OAuthSession {
-  id                  String        @id @default(cuid())
-  bankerId            String
-  banker              Banker        @relation(fields: [bankerId], references: [id], onDelete: Cascade)
-  service             OAuthService
-  serverDeploymentId  String
-  oauthSessionId      String        // Metorial session ID
-  status              OAuthStatus   @default(pending)
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
-
-  @@unique([bankerId, service])
-  @@map("oauth_sessions")
 
 model Action {
   id              String        @id @default(cuid())

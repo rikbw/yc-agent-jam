@@ -43,7 +43,7 @@ export async function runMetorialConversation(userMessage: string) {
     await metorial.withProviderSession(
       metorialOpenAI.chatCompletions,
       {
-        serverDeployments: oauthSessions.map(s => ({
+        serverDeployments: oauthSessions.map((s: { serverDeploymentId: string; oauthSessionId: string }) => ({
           serverDeploymentId: s.serverDeploymentId,
           oauthSessionId: s.oauthSessionId
         }))

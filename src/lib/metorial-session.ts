@@ -22,7 +22,7 @@ export async function createMetorialSession() {
 
   // Create MCP session with OAuth sessions
   const mcpSession = new MetorialMcpSession(metorial, {
-    serverDeployments: oauthSessions.map(s => ({
+    serverDeployments: oauthSessions.map((s: { serverDeploymentId: string; oauthSessionId: string }) => ({
       serverDeploymentId: s.serverDeploymentId,
       oauthSessionId: s.oauthSessionId
     }))
@@ -65,10 +65,10 @@ export async function getAvailableTools() {
     
     await close();
     
-    return { 
-      success: true, 
+    return {
+      success: true,
       tools: toolList,
-      connectedServices: oauthSessions.map(s => s.service)
+      connectedServices: oauthSessions.map((s: { service: string }) => s.service)
     };
   } catch (error) {
     console.error('Error getting tools:', error);
