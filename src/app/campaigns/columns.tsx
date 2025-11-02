@@ -95,7 +95,9 @@ export const columns: ColumnDef<Campaign>[] = [
             >
               Copy campaign ID
             </DropdownMenuItem>
-            <DropdownMenuItem>View details</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href={`/campaigns/${campaign.id}`}>View details</Link>
+            </DropdownMenuItem>
             <DropdownMenuItem>Edit campaign</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

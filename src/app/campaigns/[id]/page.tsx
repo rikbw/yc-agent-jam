@@ -15,10 +15,12 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DataTable } from "@/components/data-table";
+import { DataTable } from "@/components/tables/data-table";
 import { columns } from "@/app/seller-crm/columns";
-import { SellerCompany } from "@/types/seller";
+import { mapDbIndustryToType } from "@/lib/db-mappers";
+import type { SellerCompany, DealStage } from "@/types/seller";
+import { RefreshCompaniesButton } from "@/components/campaigns/refresh-companies-button";
+import { SearchParamsSection } from "@/components/campaigns/search-params-section";
 
 interface CampaignPageProps {
   params: {
@@ -27,8 +29,10 @@ interface CampaignPageProps {
 }
 
 export default async function CampaignPage({ params }: CampaignPageProps) {
+  const { id } = await params;
+
   const campaign = await prisma.campaign.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       sellers: {
         include: {
@@ -48,18 +52,21 @@ export default async function CampaignPage({ params }: CampaignPageProps) {
 
   const sellers: SellerCompany[] = campaign.sellers.map((seller) => ({
     id: seller.id,
-    companyName: seller.companyName,
-    industry: seller.industry,
+    name: seller.name,
+    industry: mapDbIndustryToType(seller.industry),
     revenue: seller.revenue,
     ebitda: seller.ebitda,
-    dealStage: seller.dealStage,
-    ownerBankerId: seller.ownerBankerId ?? undefined,
-    ownerBankerName: seller.ownerBanker?.name,
-    lastContactDate: seller.lastContactDate,
-    createdAt: seller.createdAt,
-    updatedAt: seller.updatedAt,
+    headcount: seller.headcount,
+    geography: seller.geography,
+    dealStage: seller.dealStage as DealStage,
     campaignId: seller.campaignId ?? undefined,
     campaignName: seller.campaign?.name,
+    ownerBankerId: seller.ownerBankerId,
+    ownerBankerName: seller.ownerBanker.name,
+    lastContactDate: seller.lastContactDate,
+    estimatedDealSize: seller.estimatedDealSize,
+    likelihoodToSell: seller.likelihoodToSell,
+    createdAt: seller.createdAt,
   }));
 
   return (
@@ -95,26 +102,22 @@ export default async function CampaignPage({ params }: CampaignPageProps) {
           </div>
 
           {campaign.searchParams && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Search Parameters</CardTitle>
-                <CardDescription>
-                  Target criteria for this campaign
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <pre className="text-xs font-mono bg-muted p-4 rounded-md overflow-x-auto">
-                  {JSON.stringify(campaign.searchParams, null, 2)}
-                </pre>
-              </CardContent>
-            </Card>
+            <SearchParamsSection searchParams={campaign.searchParams} />
           )}
 
           <div>
-            <h2 className="text-lg font-semibold mb-3">
-              Companies ({sellers.length})
-            </h2>
-            <DataTable columns={columns} data={sellers} />
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold">
+                Companies ({sellers.length})
+              </h2>
+              <RefreshCompaniesButton campaignId={campaign.id} />
+            </div>
+            <DataTable
+              columns={columns}
+              data={sellers}
+              searchKey="name"
+              searchPlaceholder="Search companies..."
+            />
           </div>
         </div>
       </SidebarInset>
