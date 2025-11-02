@@ -67,6 +67,7 @@ export default async function CampaignPage({ params }: CampaignPageProps) {
     lastContactDate: seller.lastContactDate,
     estimatedDealSize: seller.estimatedDealSize,
     likelihoodToSell: seller.likelihoodToSell,
+    website: seller.website ?? undefined,
     createdAt: seller.createdAt,
   }));
 

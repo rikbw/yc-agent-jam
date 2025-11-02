@@ -107,7 +107,7 @@ Based on this conversation, analyze:
 
   try {
     const { object: analysis } = await generateObject({
-      model: openrouter("openai/gpt-4o-mini"),
+      model: openrouter("openai/gpt-5-mini"),
       schema: CallAnalysisSchema,
       prompt,
     });

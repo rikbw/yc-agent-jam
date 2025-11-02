@@ -40,6 +40,7 @@ export type SellerCompany = {
   estimatedDealSize: number; // in EUR
   likelihoodToSell: number; // 0-100
   website?: string;
+  logoUrl?: string;
   valuation?: number; // in EUR
   createdAt: Date;
 };

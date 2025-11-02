@@ -6,7 +6,7 @@ import { generateObject } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { OrganizationSearchParamsSchema, OrganizationSearchParams } from "@/types/apollo";
 import { InputJsonValue } from "@prisma/client/runtime/library";
-import { searchOrganizations, searchCompaniesWithPerplexity } from "@/lib/apollo";
+import { searchCompaniesWithPerplexity } from "@/lib/apollo";
 import { Industry } from "@/generated/prisma/client";
 
 const openrouter = createOpenAI({
@@ -42,7 +42,7 @@ Be specific and targeted based on the campaign description. Only include fields 
 
   try {
     const { object } = await generateObject({
-      model: openrouter("openai/gpt-4o-mini"),
+      model: openrouter("openai/gpt-5-mini"),
       schema: OrganizationSearchParamsSchema,
       prompt,
     });
@@ -115,31 +115,35 @@ export async function searchAndSyncOrganizations(campaignId: string) {
     });
 
     // Map Apollo organizations to our SellerCompany schema
-    const companies = results.organizations.map((org) => {
-      const revenue = org.annual_revenue || 1000000; // Default 1M if not available
-      const ebitda = Math.round(revenue * 0.2); // Estimate 20% EBITDA margin
+    const companies = await Promise.all(
+      results.organizations.map(async (org) => {
+        const revenue = org.annual_revenue || 1000000; // Default 1M if not available
+        const ebitda = Math.round(revenue * 0.2); // Estimate 20% EBITDA margin
 
-      const geography = [org.city, org.state, org.country]
-        .filter(Boolean)
-        .join(", ") || "Unknown";
+        const geography = [org.city, org.state, org.country]
+          .filter(Boolean)
+          .join(", ") || "Unknown";
 
-      return {
-        name: org.name,
-        industry: mapIndustry(org.industry),
-        revenue,
-        ebitda,
-        headcount: org.estimated_num_employees || 50,
-        geography,
-        dealStage: "automated_outreach" as const,
-        campaignId: campaign.id,
-        ownerBankerId: defaultBanker.id,
-        lastContactDate: new Date(),
-        estimatedDealSize: Math.round(revenue * 0.5), // Estimate 0.5x revenue
-        likelihoodToSell: 50, // Default 50% likelihood
-        website: org.website_url || org.primary_domain || undefined,
-        valuation: org.total_funding ? Math.round(org.total_funding * 1.5) : undefined,
-      };
-    });
+        const website = org.website_url || org.primary_domain || undefined;
+
+        return {
+          name: org.name,
+          industry: mapIndustry(org.industry),
+          revenue,
+          ebitda,
+          headcount: org.estimated_num_employees || 50,
+          geography,
+          dealStage: "automated_outreach" as const,
+          campaignId: campaign.id,
+          ownerBankerId: defaultBanker.id,
+          lastContactDate: new Date(),
+          estimatedDealSize: Math.round(revenue * 0.5), // Estimate 0.5x revenue
+          likelihoodToSell: 50, // Default 50% likelihood
+          website,
+          valuation: org.total_funding ? Math.round(org.total_funding * 1.5) : undefined,
+        };
+      })
+    );
 
     // Bulk create or update companies
     // First, delete existing companies from this campaign to avoid duplicates

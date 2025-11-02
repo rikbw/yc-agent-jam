@@ -130,9 +130,11 @@ model SellerCompany {
   estimatedDealSize Int
   likelihoodToSell  Int
   website           String?
+  logoUrl           String?
   valuation         Int?
   calls             Call[]
   actions           Action[]
+  comments          Comment[]
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -183,4 +185,16 @@ model Action {
   updatedAt       DateTime      @updatedAt
 
   @@map("actions")
+}
+
+model Comment {
+  id              String        @id @default(cuid())
+  sellerCompanyId String
+  sellerCompany   SellerCompany @relation(fields: [sellerCompanyId], references: [id], onDelete: Cascade)
+  authorName      String
+  content         String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("comments")
 }
