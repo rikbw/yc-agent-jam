@@ -42,6 +42,10 @@ const data = {
           url: "/seller-crm",
         },
         {
+          title: "Meetings",
+          url: "/meetings",
+        },
+        {
           title: "Staffing & Allocation",
           url: "#",
         },
