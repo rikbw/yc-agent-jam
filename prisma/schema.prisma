@@ -55,6 +55,15 @@ enum MessageRole {
   system
 }
 
+enum ActionType {
+  call
+}
+
+enum ActionStatus {
+  pending
+  completed
+}
+
 model Campaign {
   id           String          @id @default(cuid())
   name         String
@@ -98,6 +107,7 @@ model SellerCompany {
   website           String?
   valuation         Int?
   calls             Call[]
+  actions           Action[]
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -133,4 +143,19 @@ model Message {
   updatedAt  DateTime    @updatedAt
 
   @@map("messages")
+}
+
+model Action {
+  id              String        @id @default(cuid())
+  sellerCompanyId String
+  sellerCompany   SellerCompany @relation(fields: [sellerCompanyId], references: [id], onDelete: Cascade)
+  actionType      ActionType
+  scheduledFor    DateTime
+  status          ActionStatus  @default(pending)
+  title           String
+  description     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("actions")
 }

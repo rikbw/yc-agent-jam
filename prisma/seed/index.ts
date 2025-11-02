@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, DealStage, Industry, CallOutcome, MessageRole } from "../../src/generated/prisma/client";
+import { PrismaClient, DealStage, Industry, CallOutcome, MessageRole, ActionType, ActionStatus } from "../../src/generated/prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -179,6 +179,12 @@ function randomDate(daysAgo: number): Date {
   return date;
 }
 
+function randomFutureDate(daysFromNow: number): Date {
+  const date = new Date();
+  date.setDate(date.getDate() + randomNumber(1, daysFromNow));
+  return date;
+}
+
 async function seed() {
   console.log("🌱 Starting database seed...");
 
@@ -187,6 +193,7 @@ async function seed() {
   try {
     await prisma.message.deleteMany();
     await prisma.call.deleteMany();
+    await prisma.action.deleteMany();
     await prisma.sellerCompany.deleteMany();
     await prisma.banker.deleteMany();
   } catch (error) {
@@ -354,6 +361,51 @@ async function seed() {
   }
 
   console.log(`✅ Created ${totalCalls} calls with ${totalMessages} messages`);
+
+  // Create actions for each company
+  console.log("📅 Creating actions...");
+  let totalActions = 0;
+
+  for (const company of createdCompanies) {
+    // Each company gets 1-2 actions
+    const actionCount = randomNumber(1, 2);
+
+    for (let i = 0; i < actionCount; i++) {
+      // Determine if this is an overdue, current, or future action
+      const actionTiming = randomNumber(1, 100);
+      let scheduledFor: Date;
+      let description: string;
+
+      if (actionTiming <= 20) {
+        // 20% chance: Overdue action (1-5 days ago)
+        scheduledFor = randomDate(5);
+        description = `Overdue follow-up from previous call. Need to reconnect with ${company.name}.`;
+      } else if (actionTiming <= 40) {
+        // 20% chance: Today or tomorrow
+        scheduledFor = randomNumber(1, 2) === 1 ? new Date() : new Date(Date.now() + 24 * 60 * 60 * 1000);
+        description = `Scheduled follow-up call to discuss next steps with ${company.name}.`;
+      } else {
+        // 60% chance: Future action (1-30 days)
+        scheduledFor = randomFutureDate(30);
+        description = `Follow-up call scheduled to check in on ${company.name}'s interest and timeline.`;
+      }
+
+      await prisma.action.create({
+        data: {
+          sellerCompanyId: company.id,
+          actionType: ActionType.call,
+          scheduledFor,
+          status: ActionStatus.pending,
+          title: `Follow-up call with ${company.name}`,
+          description,
+        },
+      });
+
+      totalActions++;
+    }
+  }
+
+  console.log(`✅ Created ${totalActions} actions`);
 
   console.log("✨ Seed completed successfully!");
 }

@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { CompanyLogo } from "@/components/company-logo";
 import { CompanyCallButton } from "@/components/company-call-button";
 import type { Call } from "@/types/call";
+import type { Action } from "@/types/action";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -106,6 +107,14 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
           callDate: 'desc',
         },
       },
+      actions: {
+        where: {
+          status: 'pending',
+        },
+        orderBy: {
+          scheduledFor: 'asc',
+        },
+      },
     },
   });
 
@@ -169,6 +178,19 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
     })),
     createdAt: call.createdAt,
     updatedAt: call.updatedAt,
+  }));
+
+  // Transform actions data
+  const actions: Action[] = companyFromDb.actions.map((action) => ({
+    id: action.id,
+    sellerCompanyId: action.sellerCompanyId,
+    actionType: action.actionType as Action['actionType'],
+    scheduledFor: action.scheduledFor,
+    status: action.status as Action['status'],
+    title: action.title,
+    description: action.description ?? undefined,
+    createdAt: action.createdAt,
+    updatedAt: action.updatedAt,
   }));
 
   const recordDetailRows: { label: string; value: ReactNode }[] = [
@@ -318,6 +340,8 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
                 ownerBankerName={company.ownerBankerName}
                 lastContactRelative={lastContactRelative}
                 calls={calls}
+                actions={actions}
+                companyData={company}
               />
             </div>
 

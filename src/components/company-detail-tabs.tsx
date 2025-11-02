@@ -1,21 +1,47 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { CallsList } from "@/components/calls-list";
 import { CallActivityItem } from "@/components/call-activity-item";
+import { ActionCard } from "@/components/action-card";
 import type { Call } from "@/types/call";
+import type { Action } from "@/types/action";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface CompanyDetailTabsProps {
   ownerBankerName: string;
   lastContactRelative: string;
   calls: Call[];
+  actions: Action[];
+  companyData: {
+    id: string;
+    name: string;
+    industry: string;
+    revenue: number;
+    ebitda: number;
+    headcount: number;
+    geography: string;
+    dealStage: string;
+    ownerBankerName: string;
+    ownerBankerId: string;
+    estimatedDealSize: number;
+    likelihoodToSell: number;
+  };
 }
 
-export function CompanyDetailTabs({ ownerBankerName, lastContactRelative, calls }: CompanyDetailTabsProps) {
+export function CompanyDetailTabs({ ownerBankerName, lastContactRelative, calls, actions, companyData }: CompanyDetailTabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") || "activity";
+  const [showUpcoming, setShowUpcoming] = useState(false);
+
+  // Separate actions into current and upcoming
+  const now = new Date();
+  const currentActions = actions.filter((action) => action.scheduledFor <= now);
+  const upcomingActions = actions.filter((action) => action.scheduledFor > now);
 
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams);
@@ -85,13 +111,57 @@ export function CompanyDetailTabs({ ownerBankerName, lastContactRelative, calls 
       </div>
 
       <TabsContent value="activity" className="flex flex-1 flex-col">
-        {calls.length > 0 ? (
+        {(currentActions.length > 0 || upcomingActions.length > 0 || calls.length > 0) ? (
           <div className="flex-1 overflow-auto">
-            {calls
-              .sort((a, b) => b.callDate.getTime() - a.callDate.getTime())
-              .map((call) => (
-                <CallActivityItem key={call.id} call={call} />
-              ))}
+            {/* Current Actions */}
+            {currentActions.length > 0 && (
+              <div className="space-y-3 p-4 border-b">
+                <h3 className="text-xs font-semibold uppercase text-muted-foreground px-1">
+                  Current Actions
+                </h3>
+                {currentActions.map((action) => (
+                  <ActionCard key={action.id} action={action} companyData={companyData} />
+                ))}
+              </div>
+            )}
+
+            {/* Upcoming Actions Toggle */}
+            {upcomingActions.length > 0 && (
+              <div className="border-b">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowUpcoming(!showUpcoming)}
+                  className="w-full justify-between px-5 py-3 h-auto rounded-none hover:bg-muted/50"
+                >
+                  <span className="text-xs font-semibold uppercase text-muted-foreground">
+                    Upcoming Actions ({upcomingActions.length})
+                  </span>
+                  {showUpcoming ? (
+                    <ChevronUp className="size-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="size-4 text-muted-foreground" />
+                  )}
+                </Button>
+                {showUpcoming && (
+                  <div className="space-y-3 p-4 pt-2">
+                    {upcomingActions.map((action) => (
+                      <ActionCard key={action.id} action={action} companyData={companyData} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Calls */}
+            {calls.length > 0 && (
+              <div>
+                {calls
+                  .sort((a, b) => b.callDate.getTime() - a.callDate.getTime())
+                  .map((call) => (
+                    <CallActivityItem key={call.id} call={call} />
+                  ))}
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-1 items-center justify-center bg-muted/10 px-6 py-12 text-sm text-muted-foreground">
