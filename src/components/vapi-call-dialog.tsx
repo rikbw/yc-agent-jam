@@ -259,8 +259,8 @@ Owner: ${companyData.ownerBankerName}
           tools: vapiTools
         },
         voice: {
-          provider: "playht",
-          voiceId: "jennifer",
+          provider: "11labs",
+          voiceId: "bIHbv24MWmeRgasZH58o",
         },
         // Background office ambient sound
         backgroundSound: "office",
