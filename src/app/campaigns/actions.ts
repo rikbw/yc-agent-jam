@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { generateObject } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { OrganizationSearchParamsSchema } from "@/types/apollo";
+import { InputJsonValue } from "@prisma/client/runtime/library";
 
 const openrouter = createOpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -54,7 +55,7 @@ Be specific and targeted based on the campaign description. Only include fields 
 export async function createCampaign(
   name: string,
   description: string,
-  searchParams: unknown
+  searchParams: InputJsonValue
 ) {
   if (!name) {
     throw new Error("Campaign name is required");
@@ -64,7 +65,7 @@ export async function createCampaign(
     data: {
       name,
       description: description || null,
-      searchParams: searchParams as any,
+      searchParams,
     },
   });
 
