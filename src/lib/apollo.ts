@@ -73,10 +73,11 @@ async function apolloRequest<T>(
     return schema.parse(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error('Apollo API response validation error:', error.errors);
+      const zodError = error as z.ZodError;
+      console.error('Apollo API response validation error:', zodError.issues);
       throw new Error(
-        `Invalid response format from Apollo API: ${error.errors
-          .map((e) => `${e.path.join('.')}: ${e.message}`)
+        `Invalid response format from Apollo API: ${zodError.issues
+          .map((e: z.ZodIssue) => `${e.path.join('.')}: ${e.message}`)
           .join(', ')}`
       );
     }
