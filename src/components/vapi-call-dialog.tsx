@@ -15,6 +15,11 @@ import { cn } from "@/lib/utils";
 import { createMessage, finalizeCall } from "@/lib/calls";
 import { MessageRole } from "@/generated/prisma/client";
 import { vapiSystemPrompt } from "@/lib/vapi/vapi";
+import {
+  vapiTools,
+  handleToolCall,
+  type ToolContext,
+} from "@/lib/vapi/tools";
 
 interface VapiCallDialogProps {
   open: boolean;
@@ -77,6 +82,21 @@ export function VapiCallDialog({
 
     vapi.on("message", async (message: any) => {
       console.log("Vapi message:", message);
+
+      // Handle client-side tool calls
+      if (message?.type === "tool-calls") {
+        console.log("Tool calls received:", message.toolCallList);
+
+        const context: ToolContext = {
+          callId,
+          companyData,
+        };
+
+        message.toolCallList?.forEach(async (toolCall: any) => {
+          console.log("Processing tool call:", toolCall);
+          await handleToolCall(toolCall, context);
+        });
+      }
 
       // Only save final transcripts to database
       if (
@@ -211,6 +231,8 @@ Owner: ${companyData.ownerBankerName}
 
       console.log("Starting Vapi call with company info:", companyInfo);
 
+      console.log("Vapi tools:", vapiTools);
+
       const systemPrompt = vapiSystemPrompt({
         ownerBankerName: companyData.ownerBankerName,
         companyName: companyData.name,
@@ -234,6 +256,7 @@ Owner: ${companyData.ownerBankerName}
               content: systemPrompt,
             },
           ],
+          tools: vapiTools
         },
         voice: {
           provider: "playht",
