@@ -47,6 +47,7 @@ export function CompanyCallSection({ companyData, calls }: CompanyCallSectionPro
         setDialogOpen(true);
       } else {
         console.error("Failed to create call:", result.error);
+
         // TODO: Show error message to user
       }
     } catch (error) {
@@ -60,7 +61,9 @@ export function CompanyCallSection({ companyData, calls }: CompanyCallSectionPro
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
+
         <Button size="sm" onClick={handleStartCall} disabled={isCreatingCall}>
+
           <Phone className="size-4" />
           {isCreatingCall ? "Preparing..." : "Start Call"}
         </Button>
