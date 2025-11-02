@@ -175,9 +175,9 @@ export async function runMetorialConversation(userMessage: string) {
         serverDeploymentId: s.serverDeploymentId,
         oauthSessionId: s.oauthSessionId
       })),
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini',
       client: openai,
-      maxSteps: 10
+      maxSteps: 20
     });
 
     return {

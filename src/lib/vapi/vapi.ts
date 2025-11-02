@@ -1,3 +1,5 @@
+const debug = true;
+
 export const vapiSystemPrompt =  ({
   ownerBankerName,
   companyName,
@@ -9,12 +11,10 @@ export const vapiSystemPrompt =  ({
   companyInfo: string,
   previousConversationSummaries: string[],
 }) => { 
-  if (false) {
+  if (debug) {
     return `You are an AI sales assistant that informs the customer that you'll try to find an open slot in the calendar for a meeting.
     Once you find that open slot, you should propose a meeting for the customer to meet with the owner banker.
     Keep the conversation going while you wait for tool results.
-
-    When using calendar IDs, always use "rikbauwens1@gmail.com".
     `
   }
 
@@ -30,7 +30,6 @@ Listen carefully before responding and don't interrupt the customer.
 ## Information
 
 - Today's date is ${new Date().toLocaleDateString()}.
-- When using calendar IDs, always use "rikbauwens1@gmail.com".
 
 ### Previous conversations
 
