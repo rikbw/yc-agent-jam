@@ -1,0 +1,340 @@
+"use client";
+
+import { useEffect, useState, useRef } from "react";
+import Vapi from "@vapi-ai/web";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Phone, PhoneOff, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface VapiCallDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  companyData: {
+    id: string;
+    name: string;
+    industry: string;
+    revenue: number;
+    ebitda: number;
+    headcount: number;
+    geography: string;
+    dealStage: string;
+    ownerBankerName: string;
+    estimatedDealSize: number;
+    likelihoodToSell: number;
+  };
+}
+
+type CallStatus = "idle" | "connecting" | "active" | "ended" | "error";
+
+export function VapiCallDialog({
+  open,
+  onOpenChange,
+  companyData,
+}: VapiCallDialogProps) {
+  const [callStatus, setCallStatus] = useState<CallStatus>("idle");
+  const [volumeLevel, setVolumeLevel] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const vapiRef = useRef<Vapi | null>(null);
+
+  useEffect(() => {
+    // Initialize Vapi client
+    const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
+
+    if (!publicKey) {
+      console.error("VAPI_PUBLIC_KEY not found in environment variables");
+      setErrorMessage("Vapi API key not configured");
+      setCallStatus("error");
+      return;
+    }
+
+    const vapi = new Vapi(publicKey);
+    vapiRef.current = vapi;
+
+    // Set up event listeners
+    vapi.on("call-start", () => {
+      console.log("Call started");
+      setCallStatus("active");
+      setErrorMessage(null);
+    });
+
+    vapi.on("message", (message: any) => {
+      console.log("Vapi message:", message);
+    });
+
+    vapi.on("call-end", () => {
+      console.log("Call ended");
+      setCallStatus("ended");
+      // Close dialog after a short delay
+      setTimeout(() => {
+        onOpenChange(false);
+        setCallStatus("idle");
+      }, 2000);
+    });
+
+    vapi.on("volume-level", (level: number) => {
+      setVolumeLevel(level);
+    });
+
+    vapi.on("error", (error: any) => {
+      console.error("Vapi error:", error);
+      console.error("Vapi error type:", typeof error);
+      console.error("Vapi error keys:", Object.keys(error || {}));
+      console.error("Vapi error string:", JSON.stringify(error, null, 2));
+
+      // Extract meaningful error message
+      let errorMsg = "An error occurred during the call";
+      if (error) {
+        if (typeof error === "string") {
+          errorMsg = error;
+        } else if (error.message) {
+          errorMsg = error.message;
+        } else if (error.error) {
+          errorMsg = error.error;
+        } else if (error.statusMessage) {
+          errorMsg = error.statusMessage;
+        }
+      }
+
+      setErrorMessage(errorMsg);
+      setCallStatus("error");
+    });
+
+    // Cleanup function
+    return () => {
+      if (vapiRef.current) {
+        vapiRef.current.stop();
+      }
+    };
+  }, [onOpenChange]);
+
+  useEffect(() => {
+    // Start call when dialog opens
+    if (open && vapiRef.current && callStatus === "idle") {
+      // Small delay to ensure everything is initialized
+      const timer = setTimeout(() => {
+        startCall();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [open, callStatus]);
+
+  const startCall = async () => {
+    if (!vapiRef.current) return;
+
+    setCallStatus("connecting");
+    setErrorMessage(null);
+
+    try {
+      // Format company data for the assistant
+      const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "EUR",
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(value);
+      };
+
+      const companyInfo = `
+Company: ${companyData.name}
+Industry: ${companyData.industry}
+Geography: ${companyData.geography}
+Revenue: ${formatCurrency(companyData.revenue)}
+EBITDA: ${formatCurrency(companyData.ebitda)}
+Headcount: ${companyData.headcount.toLocaleString()}
+Deal Stage: ${companyData.dealStage}
+Estimated Deal Size: ${formatCurrency(companyData.estimatedDealSize)}
+Likelihood to Sell: ${companyData.likelihoodToSell}%
+Owner: ${companyData.ownerBankerName}
+      `.trim();
+
+      console.log("Starting Vapi call with company info:", companyInfo);
+
+      // Start the call with transient assistant configuration
+      await vapiRef.current.start({
+        transcriber: {
+          provider: "deepgram",
+          model: "nova-2",
+          language: "en-US",
+        },
+        model: {
+          provider: "openai",
+          model: "gpt-4o-mini",
+          temperature: 0.7,
+          messages: [
+            {
+              role: "system",
+              content: `You are an AI sales assistant helping ${companyData.ownerBankerName} with a sales call regarding ${companyData.name}. Here is the company information:\n\n${companyInfo}\n\nYour goal is to help qualify this lead, understand their interest in selling, and identify any concerns or objections. Be professional, friendly, and focused on gathering information. Speak naturally with appropriate pauses. Listen carefully before responding and don't interrupt the customer.`,
+            },
+          ],
+        },
+        voice: {
+          provider: "playht",
+          voiceId: "jennifer",
+        },
+        // Background office ambient sound
+        backgroundSound: "office",
+        // Silence detection - longer timeout for natural pauses
+        silenceTimeoutSeconds: 30,
+        // Maximum call duration (15 minutes)
+        maxDurationSeconds: 900,
+        name: `${companyData.name} Sales Call`,
+        firstMessage: `Hello! This is an AI assistant calling on behalf of ${companyData.ownerBankerName}. I'd like to discuss your company, ${companyData.name}, and explore potential opportunities. How are you today?`,
+      });
+    } catch (error: any) {
+      console.error("Failed to start call:", error);
+      const errorMsg = error?.message || error?.error || JSON.stringify(error) || "Failed to start call. Please check your API key and try again.";
+      setErrorMessage(errorMsg);
+      setCallStatus("error");
+    }
+  };
+
+  const endCall = () => {
+    if (vapiRef.current) {
+      vapiRef.current.stop();
+      setCallStatus("ended");
+      setTimeout(() => {
+        onOpenChange(false);
+        setCallStatus("idle");
+      }, 1000);
+    }
+  };
+
+  const getStatusText = () => {
+    switch (callStatus) {
+      case "connecting":
+        return "Connecting...";
+      case "active":
+        return "Call in progress";
+      case "ended":
+        return "Call ended";
+      case "error":
+        return errorMessage || "Error occurred";
+      default:
+        return "Initializing...";
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (callStatus) {
+      case "connecting":
+        return "text-yellow-600";
+      case "active":
+        return "text-green-600";
+      case "ended":
+        return "text-gray-600";
+      case "error":
+        return "text-red-600";
+      default:
+        return "text-gray-600";
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Phone className="size-5" />
+            Call with {companyData.name}
+          </DialogTitle>
+          <DialogDescription>
+            AI-powered sales call assistant
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-6 py-6">
+          {/* Status */}
+          <div className="flex flex-col items-center gap-3">
+            {callStatus === "connecting" && (
+              <Loader2 className="size-12 animate-spin text-primary" />
+            )}
+            {callStatus === "active" && (
+              <div className="relative">
+                <Phone className="size-12 text-green-600" />
+                {/* Volume indicator */}
+                <div
+                  className="absolute -inset-2 rounded-full border-2 border-green-600 opacity-50"
+                  style={{
+                    transform: `scale(${1 + volumeLevel / 100})`,
+                    transition: "transform 0.1s ease-out",
+                  }}
+                />
+              </div>
+            )}
+            {callStatus === "ended" && (
+              <PhoneOff className="size-12 text-gray-600" />
+            )}
+            {callStatus === "error" && (
+              <PhoneOff className="size-12 text-red-600" />
+            )}
+
+            <div className="flex flex-col items-center gap-1">
+              <p className={cn("text-lg font-semibold", getStatusColor())}>
+                {getStatusText()}
+              </p>
+              {callStatus === "active" && (
+                <p className="text-sm text-muted-foreground">
+                  Speak clearly into your microphone
+                </p>
+              )}
+              {errorMessage && callStatus === "error" && (
+                <p className="text-sm text-red-600">{errorMessage}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Company Info */}
+          <div className="rounded-lg border bg-muted/50 p-4">
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Industry:</span>
+                <span className="font-medium">{companyData.industry}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Geography:</span>
+                <span className="font-medium">{companyData.geography}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Deal Stage:</span>
+                <span className="font-medium">{companyData.dealStage}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div className="flex gap-2">
+            {callStatus === "active" && (
+              <Button
+                onClick={endCall}
+                variant="destructive"
+                className="w-full"
+                size="lg"
+              >
+                <PhoneOff className="mr-2 size-4" />
+                End Call
+              </Button>
+            )}
+            {(callStatus === "error" || callStatus === "ended") && (
+              <Button
+                onClick={() => onOpenChange(false)}
+                variant="outline"
+                className="w-full"
+                size="lg"
+              >
+                Close
+              </Button>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
