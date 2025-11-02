@@ -1,3 +1,5 @@
+import { getCalendarMcpSession } from "../metorial-oauth";
+
 // Simple parameter type - just text input for MCP tools
 export interface SimpleToolParams {
   input: string;
@@ -8,37 +10,31 @@ export const vapiTools = [
   {
     type: "function" as const,
     function: {
-      name: "find_free_meeting_slot",
-      description: "Find available meeting slots based on user requirements. Call this before booking a meeting to check availability.",
+      name: "get_freebusy",
+      description: "Check free/busy information for one or more calendars",
       parameters: {
         type: "object",
         properties: {
-          input: {
-            type: "string",
-            description: "Natural language description of meeting requirements (e.g., 'next Tuesday afternoon for 1 hour')",
+          calendarIds: {
+            type: "array",
+            items: {
+              type: "string"
+            },
+            description: "List of calendar IDs to check"
           },
-        },
-        required: ["input"],
-      },
-    },
-  },
-  {
-    type: "function" as const,
-    function: {
-      name: "book_meeting_slot",
-      description: "Book a specific meeting slot. Only call this after finding available slots and getting confirmation.",
-      parameters: {
-        type: "object",
-        properties: {
-          input: {
+          timeMin: {
             type: "string",
-            description: "Natural language description of the meeting to book (e.g., 'Tuesday at 2pm with John for 1 hour, discuss Q4 planning')",
+            description: "Start time for the query (ISO 8601 format)"
           },
+          timeMax: {
+            type: "string",
+            description: "End time for the query (ISO 8601 format)"
+          }
         },
-        required: ["input"],
-      },
-    },
-  },
+        required: ["calendarIds", "timeMin", "timeMax"]
+      }
+    }
+  }
 ];
 
 // Tool handler type for better type safety
@@ -66,57 +62,26 @@ export interface ToolContext {
   };
 }
 
-// Parse tool call arguments - simplified for text input
-export const parseToolCall = (toolName: string, argsString: string): SimpleToolParams => {
-  const args = JSON.parse(argsString);
 
-  if (!args.input || typeof args.input !== 'string') {
-    throw new Error(`Tool ${toolName} requires a string 'input' parameter`);
+const getFreeBusy = async (params: any, context: ToolContext) => {
+  console.log("TOOL: Getting free busy with params:", params);
+  console.log("Context:", context);
+
+  // Get Calendar MCP session
+  const calendarSession = await getCalendarMcpSession();
+  if (!calendarSession) {
+    throw new Error('Calendar MCP session not available. Please connect Google Calendar in Settings.');
   }
 
-  return { input: args.input };
+  // Get tool manager and call the get_freebusy tool
+  const toolManager = await calendarSession.getToolManager();
+  const result = await toolManager.callTool('get_freebusy', params);
+
+
+  console.log("Free/busy result:", result);
+  return result;
 };
 
-// Tool implementations - these will forward to MCP tools
-const findFreeMeetingSlot = async (
-  params: SimpleToolParams,
-  context: ToolContext
-): Promise<any> => {
-  console.log("TOOL: Finding free meeting slots with input:", params.input);
-  console.log("Context:", context);
-
-  // TODO: Forward params.input to MCP tool
-  // The input string contains the natural language requirements
-  // Example: "next Tuesday afternoon for 1 hour"
-
-  // For now, just log and return a placeholder
-  return {
-    status: "ready_for_mcp",
-    tool: "find_free_meeting_slot",
-    input: params.input,
-    context,
-  };
-};
-
-const bookMeetingSlot = async (
-  params: SimpleToolParams,
-  context: ToolContext
-): Promise<any> => {
-  console.log("TOOL: Booking meeting slot with input:", params.input);
-  console.log("Context:", context);
-
-  // TODO: Forward params.input to MCP tool
-  // The input string contains the natural language booking request
-  // Example: "Tuesday at 2pm with John for 1 hour, discuss Q4 planning"
-
-  // For now, just log and return a placeholder
-  return {
-    status: "ready_for_mcp",
-    tool: "book_meeting_slot",
-    input: params.input,
-    context,
-  };
-};
 
 // Main tool handler - call this from your component
 export const handleToolCall = async (toolCall: any, context: ToolContext) => {
@@ -124,15 +89,9 @@ export const handleToolCall = async (toolCall: any, context: ToolContext) => {
   console.log(`Handling tool call: ${fn?.name}`, fn?.arguments);
 
   try {
-    // Parse and validate arguments
-    const params = parseToolCall(fn?.name, fn?.arguments);
-
     switch (fn?.name) {
-      case "find_free_meeting_slot":
-        return await findFreeMeetingSlot(params, context);
-
-      case "book_meeting_slot":
-        return await bookMeetingSlot(params, context);
+      case "get_freebusy":
+        return await getFreeBusy(fn?.arguments, context);
 
       default:
         console.warn(`Unknown tool call: ${fn?.name}`);

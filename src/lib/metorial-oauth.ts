@@ -1,6 +1,7 @@
 "use server";
 
 import { Metorial } from 'metorial';
+import { MetorialMcpSession } from '@metorial/mcp-session';
 import { getDefaultBanker } from '@/lib/default-user';
 import { randomBytes } from 'crypto';
 
@@ -26,8 +27,10 @@ interface OAuthSessionData {
   status: OAuthStatus;
 }
 
-// Global in-memory storage for OAuth sessions
+// Global in-memory storage
 const oauthSessions = new Map<string, OAuthSessionData>();
+let gmailMcpSession: MetorialMcpSession | null = null;
+let calendarMcpSession: MetorialMcpSession | null = null;
 
 function getSessionKey(bankerId: string, service: OAuthService): string {
   return `${bankerId}_${service}`;
@@ -106,6 +109,9 @@ export async function waitForOAuthCompletion(sessionId: string) {
     session.status = 'active';
     oauthSessions.set(sessionKey, session);
 
+    // Rebuild MCP sessions with new OAuth
+    await rebuildMcpSessions();
+
     return { success: true };
   } catch (error) {
     console.error('Error waiting for OAuth completion:', error);
@@ -166,6 +172,63 @@ export async function getActiveOAuthSessions() {
 }
 
 /**
+ * Rebuild MCP sessions from active OAuth sessions
+ */
+async function rebuildMcpSessions() {
+  const sessions = await getActiveOAuthSessions();
+
+  // Gmail session
+  const gmailSession = sessions.find(s => s.service === 'gmail');
+  if (gmailMcpSession) {
+    await gmailMcpSession.close();
+    gmailMcpSession = null;
+  }
+  if (gmailSession) {
+    gmailMcpSession = new MetorialMcpSession(metorial, {
+      serverDeployments: [{
+        serverDeploymentId: gmailSession.serverDeploymentId,
+        oauthSessionId: gmailSession.oauthSessionId
+      }]
+    });
+  }
+
+  // Calendar session
+  const calendarSession = sessions.find(s => s.service === 'google_calendar');
+  if (calendarMcpSession) {
+    await calendarMcpSession.close();
+    calendarMcpSession = null;
+  }
+  if (calendarSession) {
+    calendarMcpSession = new MetorialMcpSession(metorial, {
+      serverDeployments: [{
+        serverDeploymentId: calendarSession.serverDeploymentId,
+        oauthSessionId: calendarSession.oauthSessionId
+      }]
+    });
+  }
+}
+
+/**
+ * Get Gmail MCP session (creates if needed)
+ */
+export async function getGmailMcpSession() {
+  if (!gmailMcpSession) {
+    await rebuildMcpSessions();
+  }
+  return gmailMcpSession;
+}
+
+/**
+ * Get Calendar MCP session (creates if needed)
+ */
+export async function getCalendarMcpSession() {
+  if (!calendarMcpSession) {
+    await rebuildMcpSessions();
+  }
+  return calendarMcpSession;
+}
+
+/**
  * Disconnect OAuth session
  */
 export async function disconnectOAuthSession(service: 'gmail' | 'google_calendar') {
@@ -178,6 +241,9 @@ export async function disconnectOAuthSession(service: 'gmail' | 'google_calendar
       session.status = 'expired';
       oauthSessions.set(sessionKey, session);
     }
+
+    // Rebuild MCP sessions without disconnected OAuth
+    await rebuildMcpSessions();
 
     return { success: true };
   } catch (error) {
