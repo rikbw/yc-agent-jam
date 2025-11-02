@@ -2,15 +2,17 @@
 
 import { Metorial } from 'metorial';
 import { metorialOpenAI } from '@metorial/openai';
-import OpenAI from 'openai';
+import { generateText } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { getActiveOAuthSessions } from './metorial-oauth';
 
 const metorial = new Metorial({
   apiKey: process.env.METORIAL_API_KEY!
 });
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!
+const openrouter = createOpenAI({
+  apiKey: process.env.OPENROUTER_API_KEY,
+  baseURL: 'https://openrouter.ai/api/v1',
 });
 
 type ConversationStep = {
@@ -25,6 +27,11 @@ type ConversationStep = {
  */
 export async function runMetorialConversation(userMessage: string) {
   try {
+    // Validate required environment variables
+    if (!process.env.OPENROUTER_API_KEY) {
+      throw new Error('OPENROUTER_API_KEY is not configured');
+    }
+
     // Get active OAuth sessions
     const oauthSessions = await getActiveOAuthSessions();
 
@@ -54,24 +61,24 @@ export async function runMetorialConversation(userMessage: string) {
           content: `User: ${userMessage}`
         });
 
-        const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+        const messages: any[] = [
           { role: 'user', content: userMessage }
         ];
 
         // Conversation loop (max 5 iterations to prevent context overflow)
         for (let i = 0; i < 5; i++) {
-          const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+          const response = await generateText({
+            model: openrouter('openai/gpt-4o'),
             messages,
-            tools: session.tools
+            tools: session.tools as any,
+            maxSteps: 1, // Disable automatic tool execution
           });
 
-          const choice = response.choices[0]!;
-          const toolCalls = choice.message.tool_calls;
+          const toolCalls = response.toolCalls;
 
           // If no tool calls, we're done
-          if (!toolCalls) {
-            finalResponse = choice.message.content || 'No response';
+          if (!toolCalls || toolCalls.length === 0) {
+            finalResponse = response.text || 'No response';
             steps.push({
               type: 'response',
               content: finalResponse
@@ -79,10 +86,20 @@ export async function runMetorialConversation(userMessage: string) {
             return;
           }
 
+          // Convert Vercel AI SDK tool calls to OpenAI format for Metorial
+          const openAIToolCalls = toolCalls.map((call: any) => ({
+            id: call.toolCallId,
+            type: 'function',
+            function: {
+              name: call.toolName,
+              arguments: JSON.stringify(call.args)
+            }
+          }));
+
           // Log tool calls
-          const toolCallsInfo = toolCalls.map(call => ({
-            name: (call as any).function?.name || 'unknown',
-            arguments: (call as any).function?.arguments || '{}'
+          const toolCallsInfo = openAIToolCalls.map((call: any) => ({
+            name: call.function.name,
+            arguments: call.function.arguments
           }));
 
           steps.push({
@@ -92,7 +109,7 @@ export async function runMetorialConversation(userMessage: string) {
           });
 
           // Execute tools through Metorial
-          const toolResponses = await session.callTools(toolCalls as any);
+          const toolResponses = await session.callTools(openAIToolCalls);
 
           // Truncate large tool responses to prevent context overflow
           const truncatedResponses = toolResponses.map((response: any) => {
@@ -102,7 +119,7 @@ export async function runMetorialConversation(userMessage: string) {
               if (response.content.length > maxLength) {
                 return {
                   ...response,
-                  content: response.content.substring(0, maxLength) + 
+                  content: response.content.substring(0, maxLength) +
                     `\n\n[... truncated ${response.content.length - maxLength} characters]`
                 };
               }
@@ -114,8 +131,9 @@ export async function runMetorialConversation(userMessage: string) {
           messages.push(
             {
               role: 'assistant',
-              tool_calls: choice.message.tool_calls
-            } as any,
+              content: response.text || '',
+              tool_calls: openAIToolCalls
+            },
             ...truncatedResponses
           );
 
