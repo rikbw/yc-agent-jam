@@ -6,7 +6,7 @@ import { generateObject } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { OrganizationSearchParamsSchema, OrganizationSearchParams } from "@/types/apollo";
 import { InputJsonValue } from "@prisma/client/runtime/library";
-import { searchOrganizations } from "@/lib/apollo";
+import { searchOrganizations, searchCompaniesWithPerplexity } from "@/lib/apollo";
 import { Industry } from "@/generated/prisma/client";
 
 const openrouter = createOpenAI({
@@ -106,9 +106,9 @@ export async function searchAndSyncOrganizations(campaignId: string) {
   }
 
   try {
-    // Call Apollo API with the campaign's search parameters
+    // Call Perplexity via OpenRouter with the campaign's search parameters
     const searchParams = campaign.searchParams as OrganizationSearchParams;
-    const results = await searchOrganizations({
+    const results = await searchCompaniesWithPerplexity({
       ...searchParams,
       per_page: 25, // Limit to 25 results per sync
       page: 1,
