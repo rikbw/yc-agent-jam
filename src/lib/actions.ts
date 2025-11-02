@@ -143,3 +143,86 @@ export async function getCompanyActionsSeparated(sellerCompanyId: string) {
     };
   }
 }
+
+/**
+ * Gets all pending actions across all companies, sorted chronologically
+ * @returns Array of pending actions with associated company information
+ */
+export async function getAllPendingActions() {
+  try {
+    const actions = await prisma.action.findMany({
+      where: {
+        status: "pending",
+      },
+      include: {
+        sellerCompany: {
+          select: {
+            id: true,
+            name: true,
+            website: true,
+          },
+        },
+      },
+      orderBy: {
+        scheduledFor: "asc",
+      },
+    });
+
+    return { success: true, actions };
+  } catch (error) {
+    console.error("Error fetching all pending actions:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch all pending actions",
+      actions: [],
+    };
+  }
+}
+
+/**
+ * Gets recently completed actions across all companies
+ * @param daysBack - Number of days to look back (default: 7)
+ * @returns Array of completed actions with associated company information
+ */
+export async function getRecentlyCompletedActions(daysBack: number = 7) {
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysBack);
+
+    const actions = await prisma.action.findMany({
+      where: {
+        status: "completed",
+        updatedAt: {
+          gte: cutoffDate,
+        },
+      },
+      include: {
+        sellerCompany: {
+          select: {
+            id: true,
+            name: true,
+            website: true,
+          },
+        },
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    return { success: true, actions };
+  } catch (error) {
+    console.error("Error fetching recently completed actions:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch recently completed actions",
+      actions: [],
+    };
+  }
+}
