@@ -15,131 +15,57 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-// This is sample data.
+// Platform navigation data
 const data = {
-  versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
+  versions: ["v1.0.0"],
   navMain: [
     {
-      title: "Getting Started",
+      title: "Deal Sourcing",
       url: "#",
       items: [
         {
-          title: "Installation",
+          title: "Seller Dataset",
           url: "#",
         },
         {
-          title: "Project Structure",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Building Your Application",
-      url: "#",
-      items: [
-        {
-          title: "Routing",
-          url: "#",
-        },
-        {
-          title: "Data Fetching",
+          title: "Seller CRM",
           url: "#",
           isActive: true,
         },
         {
-          title: "Rendering",
-          url: "#",
-        },
-        {
-          title: "Caching",
-          url: "#",
-        },
-        {
-          title: "Styling",
-          url: "#",
-        },
-        {
-          title: "Optimizing",
-          url: "#",
-        },
-        {
-          title: "Configuring",
-          url: "#",
-        },
-        {
-          title: "Testing",
-          url: "#",
-        },
-        {
-          title: "Authentication",
-          url: "#",
-        },
-        {
-          title: "Deploying",
-          url: "#",
-        },
-        {
-          title: "Upgrading",
-          url: "#",
-        },
-        {
-          title: "Examples",
+          title: "Staffing & Allocation",
           url: "#",
         },
       ],
     },
     {
-      title: "API Reference",
+      title: "Deal Process",
       url: "#",
       items: [
         {
-          title: "Components",
+          title: "Process Flow",
           url: "#",
         },
         {
-          title: "File Conventions",
+          title: "Data Room",
           url: "#",
         },
         {
-          title: "Functions",
-          url: "#",
-        },
-        {
-          title: "next.config.js Options",
-          url: "#",
-        },
-        {
-          title: "CLI",
-          url: "#",
-        },
-        {
-          title: "Edge Runtime",
+          title: "Buyer Dataset",
           url: "#",
         },
       ],
     },
     {
-      title: "Architecture",
+      title: "Material Creation",
       url: "#",
       items: [
         {
-          title: "Accessibility",
+          title: "Deal Documents",
           url: "#",
         },
         {
-          title: "Fast Refresh",
-          url: "#",
-        },
-        {
-          title: "Next.js Compiler",
-          url: "#",
-        },
-        {
-          title: "Supported Browsers",
-          url: "#",
-        },
-        {
-          title: "Turbopack",
+          title: "Legal Templates",
           url: "#",
         },
       ],
