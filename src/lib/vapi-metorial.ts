@@ -38,10 +38,14 @@ export async function runMetorialConversation(userMessage: string) {
     // Use the simple .run() method which handles everything
     const result = await metorial.run({
       message: userMessage,
-      serverDeployments: oauthSessions.map(s => ({
-        serverDeploymentId: s.serverDeploymentId,
-        oauthSessionId: s.oauthSessionId
-      })),
+      serverDeployments: oauthSessions.map(s => {
+        // Only include oauthSessionId if it exists (Calendly doesn't need it)
+        const deployment: any = { serverDeploymentId: s.serverDeploymentId };
+        if (s.oauthSessionId) {
+          deployment.oauthSessionId = s.oauthSessionId;
+        }
+        return deployment;
+      }),
       model: 'gpt-4o-mini',
       client: openai,
       maxSteps: 15 // Increased to handle complex multi-step queries
