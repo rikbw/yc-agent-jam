@@ -25,6 +25,7 @@ interface VapiCallDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   callId: string;
+  previousConversationSummaries: string[];
   companyData: {
     id: string;
     name: string;
@@ -47,6 +48,7 @@ export function VapiCallDialog({
   open,
   onOpenChange,
   callId,
+  previousConversationSummaries,
   companyData,
 }: VapiCallDialogProps) {
   const [callStatus, setCallStatus] = useState<CallStatus>("idle");
@@ -104,6 +106,7 @@ export function VapiCallDialog({
         message?.transcriptType === "final" &&
         message?.transcript
       ) {
+        console.log("TRANSCRIPT: ", message.role, ": ", message.transcript);
         try {
           const role = message.role === "assistant" ? MessageRole.assistant : MessageRole.user;
           await createMessage(
@@ -237,6 +240,7 @@ Owner: ${companyData.ownerBankerName}
         ownerBankerName: companyData.ownerBankerName,
         companyName: companyData.name,
         companyInfo: companyInfo,
+        previousConversationSummaries,
       });
 
       // Start the call with transient assistant configuration

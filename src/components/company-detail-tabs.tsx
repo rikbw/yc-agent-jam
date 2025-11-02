@@ -120,7 +120,7 @@ export function CompanyDetailTabs({ ownerBankerName, lastContactRelative, calls,
                   Current Actions
                 </h3>
                 {currentActions.map((action) => (
-                  <ActionCard key={action.id} action={action} companyData={companyData} />
+                  <ActionCard key={action.id} action={action} companyData={companyData} calls={calls} />
                 ))}
               </div>
             )}
@@ -145,7 +145,7 @@ export function CompanyDetailTabs({ ownerBankerName, lastContactRelative, calls,
                 {showUpcoming && (
                   <div className="space-y-3 p-4 pt-2">
                     {upcomingActions.map((action) => (
-                      <ActionCard key={action.id} action={action} companyData={companyData} />
+                      <ActionCard key={action.id} action={action} companyData={companyData} calls={calls} />
                     ))}
                   </div>
                 )}

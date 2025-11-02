@@ -22,7 +22,7 @@ export type FindFreeMeetingSlotParams = z.infer<typeof findFreeMeetingSlotSchema
 export type BookMeetingSlotParams = z.infer<typeof bookMeetingSlotSchema>;
 
 // Helper to remove $schema property from generated JSON Schema
-const cleanJsonSchema = (schema: { $schema?: string; type? }) => {
+const cleanJsonSchema = (schema: { $schema?: string; type?: any }) => {
   const { $schema, ...cleaned } = schema;
   return cleaned;
 };
@@ -97,7 +97,7 @@ const findFreeMeetingSlot = async (
   params: FindFreeMeetingSlotParams,
   context: ToolContext
 ): Promise<string[]> => {
-  console.log("Finding free meeting slots:", params);
+  console.log("TOOL: Finding free meeting slots:", params);
 
   // Fake implementation - simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
@@ -120,7 +120,7 @@ const bookMeetingSlot = async (
   params: BookMeetingSlotParams,
   context: ToolContext
 ): Promise<{ success: boolean; confirmationId?: string }> => {
-  console.log("Booking meeting slot:", params);
+  console.log("TOOL: Booking meeting slot:", params);
 
   // Fake implementation - simulate API delay
   await new Promise(resolve => setTimeout(resolve, 800));

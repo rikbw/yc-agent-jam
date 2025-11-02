@@ -26,6 +26,7 @@ export type Call = {
   duration: number; // in minutes
   outcome?: CallOutcome;
   notes?: string;
+  summary?: string;
   messages: Message[];
   createdAt: Date;
   updatedAt: Date;

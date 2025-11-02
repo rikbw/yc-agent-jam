@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Phone } from "lucide-react";
 import { VapiCallDialog } from "@/components/vapi-call-dialog";
 import { createCall } from "@/lib/calls";
+import type { Call } from "@/types/call";
 
 interface CompanyCallSectionProps {
+  calls: Call[];
   companyData: {
     id: string;
     name: string;
@@ -23,10 +25,15 @@ interface CompanyCallSectionProps {
   };
 }
 
-export function CompanyCallSection({ companyData }: CompanyCallSectionProps) {
+export function CompanyCallSection({ companyData, calls }: CompanyCallSectionProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [callId, setCallId] = useState<string | null>(null);
   const [isCreatingCall, setIsCreatingCall] = useState(false);
+
+  const previousSummaries = calls
+    .filter(call => call.summary)
+    .map(call => call.summary!)
+    .slice(0, 5); // Only keep last 5 summaries
 
   const handleStartCall = async () => {
     setIsCreatingCall(true);
@@ -65,6 +72,7 @@ export function CompanyCallSection({ companyData }: CompanyCallSectionProps) {
           onOpenChange={setDialogOpen}
           companyData={companyData}
           callId={callId}
+          previousConversationSummaries={previousSummaries}
         />
       )}
     </>

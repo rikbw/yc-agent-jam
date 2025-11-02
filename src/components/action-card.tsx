@@ -11,9 +11,11 @@ import { createCall } from "@/lib/calls";
 import { VapiCallDialog } from "@/components/vapi-call-dialog";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import type { Call } from "@/types/call";
 
 interface ActionCardProps {
   action: Action;
+  calls: Call[];
   companyData: {
     id: string;
     name: string;
@@ -76,13 +78,18 @@ const getActionIcon = (actionType: string) => {
   }
 };
 
-export function ActionCard({ action, companyData }: ActionCardProps) {
+export function ActionCard({ action, companyData, calls }: ActionCardProps) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [callId, setCallId] = useState<string | null>(null);
   const [isStartingCall, setIsStartingCall] = useState(false);
   const scheduledRelative = formatRelativeTime(action.scheduledFor);
   const isOverdue = action.scheduledFor < new Date();
+
+  const previousSummaries = calls
+    .filter(call => call.summary)
+    .map(call => call.summary!)
+    .slice(0, 5); // Only keep last 5 summaries
 
   const handleStartCall = async () => {
     setIsStartingCall(true);
@@ -176,6 +183,7 @@ export function ActionCard({ action, companyData }: ActionCardProps) {
           onOpenChange={handleDialogClose}
           companyData={companyData}
           callId={callId}
+          previousConversationSummaries={previousSummaries}
         />
       )}
     </div>

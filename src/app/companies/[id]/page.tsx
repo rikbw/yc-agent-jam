@@ -167,6 +167,7 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
     duration: call.duration,
     outcome: call.outcome as Call['outcome'],
     notes: call.notes ?? undefined,
+    summary: call.summary ?? undefined,
     messages: call.messages.map((msg) => ({
       id: msg.id,
       callId: msg.callId,
@@ -330,7 +331,7 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
                 </div>
               </div>
 
-              <CompanyCallButton companyData={company} />
+              <CompanyCallButton companyData={company} calls={calls} />
             </div>
           </div>
 
