@@ -307,6 +307,10 @@ Owner: ${companyData.ownerBankerName}
 
       console.log("System prompt:", systemPrompt);
 
+      const firstMessage = previousConversationSummaries.some(summary => summary !== "") ?
+        `Hello! This is an AI assistant calling on behalf of ${companyData.ownerBankerName}. I'm following up on our previous conversation. How are you today?` :
+        `Hello! This is an AI assistant calling on behalf of ${companyData.ownerBankerName}. I'd like to discuss your company, ${companyData.name}, and explore potential opportunities. How are you today?`;
+
       // Start the call with transient assistant configuration
       await vapiRef.current.start({
         transcriber: {
@@ -335,7 +339,7 @@ Owner: ${companyData.ownerBankerName}
         // Maximum call duration (15 minutes)
         maxDurationSeconds: 900,
         name: `${companyData.name} Sales Call`,
-        firstMessage: `Hello! This is an AI assistant calling on behalf of ${companyData.ownerBankerName}. I'd like to discuss your company, ${companyData.name}, and explore potential opportunities. How are you today?`,
+        firstMessage: firstMessage,
       });
     } catch (error: any) {
       console.error("Failed to start call:", error);
