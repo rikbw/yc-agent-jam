@@ -96,7 +96,50 @@ export function VapiCallDialog({
 
         message.toolCallList?.forEach(async (toolCall: any) => {
           console.log("Processing tool call:", toolCall);
-          await handleToolCallAction(toolCall, context);
+
+          // Immediately inform the model we're processing the request
+          if (vapiRef.current) {
+            vapiRef.current.send({
+              type: "add-message",
+              message: {
+                role: "system",
+                content: `Processing ${toolCall.function?.name || 'tool'} request...`
+              }
+            });
+          }
+
+          // Execute the tool call and get the result
+          try {
+            const result = await handleToolCallAction(toolCall, context);
+            console.log("Tool call result:", result);
+
+            // Inject the result back to the model
+            if (vapiRef.current && result) {
+              const resultMessage = typeof result === 'string'
+                ? result
+                : JSON.stringify(result, null, 2);
+
+              vapiRef.current.send({
+                type: "add-message",
+                message: {
+                  role: "system",
+                  content: `Tool ${toolCall.function?.name || 'call'} result: ${resultMessage}`
+                }
+              });
+            }
+          } catch (error) {
+            console.error("Error executing tool call:", error);
+            // Inform the model about the error
+            if (vapiRef.current) {
+              vapiRef.current.send({
+                type: "add-message",
+                message: {
+                  role: "system",
+                  content: `Error executing ${toolCall.function?.name || 'tool'}: ${error instanceof Error ? error.message : 'Unknown error'}`
+                }
+              });
+            }
+          }
         });
       }
 
@@ -261,6 +304,8 @@ Owner: ${companyData.ownerBankerName}
         companyInfo: companyInfo,
         previousConversationSummaries,
       });
+
+      console.log("System prompt:", systemPrompt);
 
       // Start the call with transient assistant configuration
       await vapiRef.current.start({

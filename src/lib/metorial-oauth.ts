@@ -177,7 +177,7 @@ export async function runMetorialConversation(userMessage: string) {
       })),
       model: 'gpt-4o-mini',
       client: openai,
-      maxSteps: 5
+      maxSteps: 10
     });
 
     return {
