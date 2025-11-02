@@ -29,8 +29,7 @@ const data = {
         },
         {
           title: "Seller CRM",
-          url: "#",
-          isActive: true,
+          url: "/seller-crm",
         },
         {
           title: "Staffing & Allocation",
