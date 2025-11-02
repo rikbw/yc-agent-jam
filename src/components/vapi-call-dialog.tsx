@@ -14,6 +14,12 @@ import { Phone, PhoneOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createMessage, finalizeCall } from "@/lib/calls";
 import { MessageRole } from "@/generated/prisma/client";
+import { vapiSystemPrompt } from "@/lib/vapi/vapi";
+import {
+  vapiTools,
+  handleToolCall,
+  type ToolContext,
+} from "@/lib/vapi/tools";
 
 interface VapiCallDialogProps {
   open: boolean;
@@ -76,6 +82,21 @@ export function VapiCallDialog({
 
     vapi.on("message", async (message: any) => {
       console.log("Vapi message:", message);
+
+      // Handle client-side tool calls
+      if (message?.type === "tool-calls") {
+        console.log("Tool calls received:", message.toolCallList);
+
+        const context: ToolContext = {
+          callId,
+          companyData,
+        };
+
+        message.toolCallList?.forEach(async (toolCall: any) => {
+          console.log("Processing tool call:", toolCall);
+          await handleToolCall(toolCall, context);
+        });
+      }
 
       // Only save final transcripts to database
       if (
@@ -210,6 +231,14 @@ Owner: ${companyData.ownerBankerName}
 
       console.log("Starting Vapi call with company info:", companyInfo);
 
+      console.log("Vapi tools:", vapiTools);
+
+      const systemPrompt = vapiSystemPrompt({
+        ownerBankerName: companyData.ownerBankerName,
+        companyName: companyData.name,
+        companyInfo: companyInfo,
+      });
+
       // Start the call with transient assistant configuration
       await vapiRef.current.start({
         transcriber: {
@@ -224,13 +253,14 @@ Owner: ${companyData.ownerBankerName}
           messages: [
             {
               role: "system",
-              content: `You are an AI sales assistant helping ${companyData.ownerBankerName} with a sales call regarding ${companyData.name}. Here is the company information:\n\n${companyInfo}\n\nYour goal is to help qualify this lead, understand their interest in selling, and identify any concerns or objections. Be professional, friendly, and focused on gathering information. Speak naturally with appropriate pauses. Listen carefully before responding and don't interrupt the customer.`,
+              content: systemPrompt,
             },
           ],
+          tools: vapiTools
         },
         voice: {
-          provider: "playht",
-          voiceId: "jennifer",
+          provider: "11labs",
+          voiceId: "bIHbv24MWmeRgasZH58o",
         },
         // Background office ambient sound
         backgroundSound: "office",
