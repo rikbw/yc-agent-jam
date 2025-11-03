@@ -40,6 +40,7 @@ export type SellerCompany = {
   estimatedDealSize: number; // in EUR
   likelihoodToSell: number; // 0-100
   website?: string;
+  logoUrl?: string;
   valuation?: number; // in EUR
   createdAt: Date;
 };
@@ -59,15 +60,15 @@ export const DEAL_STAGE_LABELS: Record<DealStage, string> = {
 };
 
 export const DEAL_STAGE_COLORS: Record<DealStage, string> = {
-  automated_outreach: "bg-slate-100 text-slate-800",
-  dealer_outreach: "bg-blue-100 text-blue-800",
-  pitch_meeting_planned: "bg-purple-100 text-purple-800",
-  proposal_sent: "bg-yellow-100 text-yellow-800",
-  mandate_signed: "bg-green-100 text-green-800",
-  deal_material_creation: "bg-cyan-100 text-cyan-800",
-  buyer_reachouts: "bg-indigo-100 text-indigo-800",
-  deal_negotiations: "bg-orange-100 text-orange-800",
-  deal_closed: "bg-green-500 text-white",
-  deal_lost: "bg-red-100 text-red-800",
-  re_engage_later: "bg-gray-100 text-gray-800",
+  automated_outreach: "bg-muted/30 text-muted-foreground border border-border",
+  dealer_outreach: "bg-muted/40 text-foreground border border-border",
+  pitch_meeting_planned: "bg-muted/50 text-foreground border border-border",
+  proposal_sent: "bg-muted/60 text-foreground border border-border",
+  mandate_signed: "bg-muted/70 text-foreground border border-border",
+  deal_material_creation: "bg-muted/60 text-foreground border border-border",
+  buyer_reachouts: "bg-muted/70 text-foreground border border-border",
+  deal_negotiations: "bg-muted/80 text-foreground border border-border",
+  deal_closed: "bg-muted text-foreground border border-border",
+  deal_lost: "bg-muted/40 text-muted-foreground border border-border",
+  re_engage_later: "bg-muted/30 text-muted-foreground border border-border",
 };

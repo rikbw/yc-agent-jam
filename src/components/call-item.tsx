@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight, Clock, Phone } from "lucide-react";
 import type { Call } from "@/types/call";
 import { CALL_OUTCOME_LABELS, CALL_OUTCOME_COLORS } from "@/types/call";
+import { getAvatarUrl } from "@/lib/utils";
 
 interface CallItemProps {
   call: Call;
@@ -84,6 +85,7 @@ export function CallItem({ call }: CallItemProps) {
         className="flex w-full items-start gap-3 p-4 text-left transition-colors hover:bg-muted/30"
       >
         <Avatar className="size-10 shrink-0 border border-border/60">
+          <AvatarImage src={getAvatarUrl(call.bankerName)} alt={call.bankerName} />
           <AvatarFallback>{getInitials(call.bankerName)}</AvatarFallback>
         </Avatar>
         <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -148,14 +150,14 @@ export function CallItem({ call }: CallItemProps) {
                       }`}
                     >
                       <div
-                        className={`flex max-w-[80%] flex-col gap-1 rounded-lg px-3 py-2 ${
+                        className={`flex max-w-[80%] flex-col gap-1 rounded-lg px-3 py-2 border ${
                           message.role === "assistant"
-                            ? "bg-blue-50 text-blue-900"
-                            : "bg-green-50 text-green-900"
+                            ? "bg-muted/50"
+                            : "bg-background"
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-semibold uppercase">
+                          <span className="text-[10px] font-semibold uppercase text-muted-foreground">
                             {message.role === "assistant" ? "AI Agent" : "Contact"}
                           </span>
                           <span className="text-[10px] text-muted-foreground">

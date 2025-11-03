@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, DealStage, Industry, CallOutcome, MessageRole, ActionType, ActionStatus } from "../../src/generated/prisma/client";
+import { PrismaClient, DealStage, Industry, CallOutcome, MessageRole, ActionType, ActionStatus, Campaign } from "../../src/generated/prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -12,76 +12,82 @@ const bankers = [
   { id: "banker-6", name: "James Thompson" },
 ];
 
-const companyNames = [
-  "TechFlow Solutions",
-  "Artisan Coffee Roasters",
-  "MedTech Innovations",
-  "LogiChain Pro",
-  "GreenEnergy Systems",
-  "FinanceHub",
-  "CloudSync Technologies",
-  "Premium Food Distributors",
-  "DataSecure Systems",
-  "Urban Real Estate Group",
-  "HealthCare Plus",
-  "Manufacturing Excellence",
-  "E-Shop Masters",
-  "ConsultPro Services",
-  "Digital Marketing Hub",
-  "AutoParts Wholesale",
-  "FreshMart Supermarkets",
-  "BuildTech Construction",
-  "PharmaSolutions",
-  "TravelEase Booking",
-  "SportGear Retail",
-  "EduTech Learning",
-  "Fashion Forward",
-  "HomeDecor Specialists",
-  "AgriTech Farming",
-  "SecureBank Systems",
-  "CleanTech Solutions",
-  "PackageLogistics",
-  "LegalEase Software",
-  "DesignStudio Pro",
-  "CloudHosting Services",
-  "RetailPOS Systems",
-  "SmartHome Tech",
-  "FoodDelivery Network",
-  "InsureTech Solutions",
-  "MarketPlace Platform",
-  "VideoStream Services",
-  "CyberDefense Systems",
-  "HRManage Software",
-  "AccountingPro Tools",
-  "ProjectTrack Solutions",
-  "CustomerCRM Plus",
-  "InventoryMaster",
-  "PaymentGateway Pro",
-  "Analytics Dashboard",
-  "MobilePay Solutions",
-  "WorkSpace Rentals",
-  "FitnessTrack App",
-  "RecipeBox Platform",
-  "PetCare Services",
-  "EventPlan Pro",
-  "TranslateAI Services",
-  "AudioStream Platform",
-  "GraphicDesign Tools",
-  "CodeDeploy Systems",
+const campaigns = [
+  {
+    name: "InsureTech",
+    description: "Insurance technology companies transforming the insurance industry",
+    companies: [
+      { name: "PolicyPro", domain: "policypro.com", industry: Industry.Fintech },
+      { name: "ClaimsFast", domain: "claimsfast.io", industry: Industry.Fintech },
+      { name: "InsureAI", domain: "insureai.com", industry: Industry.Technology },
+      { name: "RiskGuard", domain: "riskguard.io", industry: Industry.SaaS },
+      { name: "AutoCover", domain: "autocover.com", industry: Industry.Technology },
+      { name: "HealthShield Insurance", domain: "healthshield.com", industry: Industry.Healthcare },
+      { name: "SmartClaims", domain: "smartclaims.io", industry: Industry.SaaS },
+      { name: "InsureNow", domain: "insurenow.com", industry: Industry.Fintech },
+      { name: "CoverageAI", domain: "coverageai.io", industry: Industry.Technology },
+      { name: "QuickQuote Insurance", domain: "quickquote.com", industry: Industry.SaaS },
+      { name: "PetProtect", domain: "petprotect.com", industry: Industry.Technology },
+      { name: "TravelSafe Insurance", domain: "travelsafe.com", industry: Industry.Fintech },
+      { name: "HomeGuardian", domain: "homeguardian.io", industry: Industry.Technology },
+      { name: "BusinessShield", domain: "businessshield.com", industry: Industry.Fintech },
+      { name: "LifeSecure", domain: "lifesecure.io", industry: Industry.Technology },
+      { name: "CyberInsure", domain: "cyberinsure.com", industry: Industry.SaaS },
+      { name: "FloodProtect", domain: "floodprotect.io", industry: Industry.Technology },
+      { name: "AccidentCare", domain: "accidentcare.com", industry: Industry.Healthcare },
+      { name: "DisabilityGuard", domain: "disabilityguard.io", industry: Industry.Fintech },
+    ]
+  },
+  {
+    name: "HealthTech",
+    description: "Healthcare technology companies revolutionizing patient care and medical services",
+    companies: [
+      { name: "MediConnect", domain: "mediconnect.com", industry: Industry.Healthcare },
+      { name: "HealthHub Pro", domain: "healthhubpro.io", industry: Industry.Healthcare },
+      { name: "TeleMed Solutions", domain: "telemedsolutions.com", industry: Industry.Healthcare },
+      { name: "PatientFirst", domain: "patientfirst.io", industry: Industry.Healthcare },
+      { name: "DiagnosticAI", domain: "diagnosticai.com", industry: Industry.Healthcare },
+      { name: "PharmaTech", domain: "pharmatech.io", industry: Industry.Healthcare },
+      { name: "LabSync", domain: "labsync.com", industry: Industry.Healthcare },
+      { name: "CareCoordinator", domain: "carecoordinator.io", industry: Industry.SaaS },
+      { name: "HealthRecords Plus", domain: "healthrecordsplus.com", industry: Industry.SaaS },
+      { name: "VitalTrack", domain: "vitaltrack.io", industry: Industry.Healthcare },
+      { name: "MentalWellness", domain: "mentalwellness.com", industry: Industry.Healthcare },
+      { name: "SurgeryScheduler", domain: "surgeryscheduler.io", industry: Industry.SaaS },
+      { name: "DentalPro", domain: "dentalpro.com", industry: Industry.Healthcare },
+      { name: "RadiologyCloud", domain: "radiologycloud.io", industry: Industry.Healthcare },
+      { name: "HomeHealth Connect", domain: "homehealthconnect.com", industry: Industry.Healthcare },
+      { name: "FitnessRx", domain: "fitnessrx.io", industry: Industry.Healthcare },
+      { name: "NutritionTrack", domain: "nutritiontrack.com", industry: Industry.Healthcare },
+      { name: "BioMetrics", domain: "biometrics.io", industry: Industry.Healthcare },
+    ]
+  },
+  {
+    name: "FinTech",
+    description: "Financial technology companies modernizing banking, payments, and financial services",
+    companies: [
+      { name: "PayFast", domain: "payfast.com", industry: Industry.Fintech },
+      { name: "LendingPro", domain: "lendingpro.io", industry: Industry.Fintech },
+      { name: "CryptoTrade", domain: "cryptotrade.com", industry: Industry.Fintech },
+      { name: "WealthManage", domain: "wealthmanage.io", industry: Industry.Fintech },
+      { name: "BankingAI", domain: "bankingai.com", industry: Industry.Fintech },
+      { name: "InvoiceFlow", domain: "invoiceflow.io", industry: Industry.SaaS },
+      { name: "ExpenseTracker Pro", domain: "expensetrackerro.com", industry: Industry.SaaS },
+      { name: "PayrollPro", domain: "payrollpro.io", industry: Industry.Fintech },
+      { name: "InvestSmart", domain: "investsmart.com", industry: Industry.Fintech },
+      { name: "TaxOptimize", domain: "taxoptimize.io", industry: Industry.SaaS },
+      { name: "FraudGuard", domain: "fraudguard.com", industry: Industry.Fintech },
+      { name: "MobileWallet", domain: "mobilewallet.io", industry: Industry.Fintech },
+      { name: "P2P Transfer", domain: "p2ptransfer.com", industry: Industry.Fintech },
+      { name: "CreditScore Plus", domain: "creditscoreplus.io", industry: Industry.Fintech },
+      { name: "MortgageTech", domain: "mortgagetech.com", industry: Industry.Fintech },
+      { name: "TradingDesk", domain: "tradingdesk.io", industry: Industry.Fintech },
+      { name: "ComplianceHub", domain: "compliancehub.com", industry: Industry.SaaS },
+      { name: "FinancialPlan Pro", domain: "financialplanpro.io", industry: Industry.Fintech },
+    ]
+  }
 ];
 
-const industries = [
-  Industry.SaaS,
-  Industry.E_commerce,
-  Industry.Manufacturing,
-  Industry.Healthcare,
-  Industry.Fintech,
-  Industry.Food_Beverage,
-  Industry.Professional_Services,
-  Industry.Technology,
-  Industry.Logistics,
-  Industry.Real_Estate,
-];
 
 const dealStages = [
   DealStage.automated_outreach,
@@ -195,6 +201,7 @@ async function seed() {
     await prisma.call.deleteMany();
     await prisma.action.deleteMany();
     await prisma.sellerCompany.deleteMany();
+    await prisma.campaign.deleteMany();
     await prisma.banker.deleteMany();
   } catch (error) {
     console.log("⚠️  Tables don't exist yet, skipping cleanup");
@@ -212,67 +219,84 @@ async function seed() {
   }
   console.log(`✅ Created ${bankers.length} bankers`);
 
-  // Create seller companies
-  console.log("🏢 Creating seller companies...");
-  const count = 55;
-  const createdCompanies: Array<{ id: string; name: string; industry: string; ownerBankerId: string; ownerBankerName: string }> = [];
-
-  for (let i = 0; i < count; i++) {
-    const revenue = randomNumber(500_000, 50_000_000);
-    const ebitdaMargin = randomNumber(10, 35) / 100;
-    const ebitda = Math.floor(revenue * ebitdaMargin);
-    const banker = randomElement(bankers);
-    const dealStage = randomElement(dealStages);
-
-    // More recent contact for active deals
-    const isActiveDeal = activeDealStages.has(dealStage);
-
-    const lastContactDaysAgo = isActiveDeal
-      ? randomNumber(1, 14)
-      : randomNumber(15, 120);
-
-    // Generate website for 70% of companies
-    const hasWebsite = Math.random() > 0.3;
-    const companyName = companyNames[i % companyNames.length];
-    const website = hasWebsite
-      ? `https://${companyName.toLowerCase().replace(/\s+/g, "")}.com`
-      : undefined;
-
-    // Generate valuation for 40% of companies (usually more advanced stage)
-    const hasValuation = Math.random() > 0.6 || isActiveDeal;
-    const valuation = hasValuation
-      ? Math.floor(revenue * randomNumber(3, 12))
-      : undefined;
-
-    const industry = randomElement(industries);
-    const company = await prisma.sellerCompany.create({
+  // Create campaigns
+  console.log("📋 Creating campaigns...");
+  const createdCampaigns = [];
+  for (const campaignData of campaigns) {
+    const campaign = await prisma.campaign.create({
       data: {
-        name: companyName,
-        industry,
-        revenue,
-        ebitda,
-        headcount: randomNumber(5, 500),
-        geography: randomElement(geographies),
-        dealStage,
-        ownerBankerId: banker.id,
-        lastContactDate: randomDate(lastContactDaysAgo),
-        estimatedDealSize: Math.floor((revenue * randomNumber(50, 150)) / 100),
-        likelihoodToSell: randomNumber(20, 95),
-        website,
-        valuation,
-        createdAt: randomDate(randomNumber(30, 365)),
+        name: campaignData.name,
+        description: campaignData.description,
       },
     });
-
-    createdCompanies.push({
-      id: company.id,
-      name: company.name,
-      industry: industry,
-      ownerBankerId: banker.id,
-      ownerBankerName: banker.name,
+    createdCampaigns.push({
+      ...campaign,
+      companies: campaignData.companies,
     });
   }
-  console.log(`✅ Created ${count} seller companies`);
+  console.log(`✅ Created ${createdCampaigns.length} campaigns`);
+
+  // Create seller companies
+  console.log("🏢 Creating seller companies...");
+  const createdCompanies: Array<{ id: string; name: string; industry: string; ownerBankerId: string; ownerBankerName: string }> = [];
+
+  for (const campaign of createdCampaigns) {
+    for (const companyData of campaign.companies) {
+      const revenue = randomNumber(500_000, 50_000_000);
+      const ebitdaMargin = randomNumber(10, 35) / 100;
+      const ebitda = Math.floor(revenue * ebitdaMargin);
+      const banker = randomElement(bankers);
+      const dealStage = randomElement(dealStages);
+
+      // More recent contact for active deals
+      const isActiveDeal = activeDealStages.has(dealStage);
+
+      const lastContactDaysAgo = isActiveDeal
+        ? randomNumber(1, 14)
+        : randomNumber(15, 120);
+
+      // Generate website for 70% of companies
+      const hasWebsite = Math.random() > 0.3;
+      const website = hasWebsite
+        ? `https://${companyData.domain}`
+        : undefined;
+
+      // Generate valuation for 40% of companies (usually more advanced stage)
+      const hasValuation = Math.random() > 0.6 || isActiveDeal;
+      const valuation = hasValuation
+        ? Math.floor(revenue * randomNumber(3, 12))
+        : undefined;
+
+      const company = await prisma.sellerCompany.create({
+        data: {
+          name: companyData.name,
+          industry: companyData.industry,
+          revenue,
+          ebitda,
+          headcount: randomNumber(5, 500),
+          geography: randomElement(geographies),
+          dealStage,
+          campaignId: campaign.id,
+          ownerBankerId: banker.id,
+          lastContactDate: randomDate(lastContactDaysAgo),
+          estimatedDealSize: Math.floor((revenue * randomNumber(50, 150)) / 100),
+          likelihoodToSell: randomNumber(20, 95),
+          website,
+          valuation,
+          createdAt: randomDate(randomNumber(30, 365)),
+        },
+      });
+
+      createdCompanies.push({
+        id: company.id,
+        name: company.name,
+        industry: companyData.industry,
+        ownerBankerId: banker.id,
+        ownerBankerName: banker.name,
+      });
+    }
+  }
+  console.log(`✅ Created ${createdCompanies.length} seller companies`);
 
   // Create calls and messages for each company
   console.log("📞 Creating calls and messages...");
@@ -365,47 +389,116 @@ async function seed() {
   // Create actions for each company
   console.log("📅 Creating actions...");
   let totalActions = 0;
+  let totalCompletedActions = 0;
 
   for (const company of createdCompanies) {
-    // Each company gets 1-2 actions
+    // Each company gets 1-2 pending actions
     const actionCount = randomNumber(1, 2);
 
     for (let i = 0; i < actionCount; i++) {
+      // 30% chance this is an email task instead of call
+      const isEmailAction = Math.random() < 0.3;
+      const actionType = isEmailAction ? ActionType.email : ActionType.call;
+
       // Determine if this is an overdue, current, or future action
       const actionTiming = randomNumber(1, 100);
       let scheduledFor: Date;
       let description: string;
+      let title: string;
 
-      if (actionTiming <= 20) {
-        // 20% chance: Overdue action (1-5 days ago)
-        scheduledFor = randomDate(5);
-        description = `Overdue follow-up from previous call. Need to reconnect with ${company.name}.`;
-      } else if (actionTiming <= 40) {
-        // 20% chance: Today or tomorrow
-        scheduledFor = randomNumber(1, 2) === 1 ? new Date() : new Date(Date.now() + 24 * 60 * 60 * 1000);
-        description = `Scheduled follow-up call to discuss next steps with ${company.name}.`;
+      if (isEmailAction) {
+        if (actionTiming <= 20) {
+          // 20% chance: Overdue action (1-5 days ago)
+          scheduledFor = randomDate(5);
+          description = `Send follow-up email with updated deal materials to ${company.name}.`;
+          title = `Send follow-up email to ${company.name}`;
+        } else if (actionTiming <= 40) {
+          // 20% chance: Today or tomorrow
+          scheduledFor = randomNumber(1, 2) === 1 ? new Date() : new Date(Date.now() + 24 * 60 * 60 * 1000);
+          description = `Send proposal and market analysis to ${company.name}.`;
+          title = `Send proposal to ${company.name}`;
+        } else {
+          // 60% chance: Future action (1-30 days)
+          scheduledFor = randomFutureDate(30);
+          description = `Send quarterly check-in email to ${company.name} about market conditions.`;
+          title = `Send check-in email to ${company.name}`;
+        }
       } else {
-        // 60% chance: Future action (1-30 days)
-        scheduledFor = randomFutureDate(30);
-        description = `Follow-up call scheduled to check in on ${company.name}'s interest and timeline.`;
+        if (actionTiming <= 20) {
+          // 20% chance: Overdue action (1-5 days ago)
+          scheduledFor = randomDate(5);
+          description = `Overdue follow-up from previous call. Need to reconnect with ${company.name}.`;
+          title = `Follow-up call with ${company.name}`;
+        } else if (actionTiming <= 40) {
+          // 20% chance: Today or tomorrow
+          scheduledFor = randomNumber(1, 2) === 1 ? new Date() : new Date(Date.now() + 24 * 60 * 60 * 1000);
+          description = `Scheduled follow-up call to discuss next steps with ${company.name}.`;
+          title = `Follow-up call with ${company.name}`;
+        } else {
+          // 60% chance: Future action (1-30 days)
+          scheduledFor = randomFutureDate(30);
+          description = `Follow-up call scheduled to check in on ${company.name}'s interest and timeline.`;
+          title = `Follow-up call with ${company.name}`;
+        }
       }
 
       await prisma.action.create({
         data: {
           sellerCompanyId: company.id,
-          actionType: ActionType.call,
+          actionType,
           scheduledFor,
           status: ActionStatus.pending,
-          title: `Follow-up call with ${company.name}`,
+          title,
           description,
         },
       });
 
       totalActions++;
     }
+
+    // 60% chance to have 1-2 completed actions
+    if (Math.random() < 0.6) {
+      const completedCount = randomNumber(1, 2);
+
+      for (let i = 0; i < completedCount; i++) {
+        const isEmailAction = Math.random() < 0.4;
+        const actionType = isEmailAction ? ActionType.email : ActionType.call;
+
+        // Completed actions from 1-14 days ago
+        const scheduledFor = randomDate(14);
+        // Updated timestamp to show recent completion (within 1-7 days)
+        const updatedAt = new Date(scheduledFor.getTime() + randomNumber(1, 7) * 24 * 60 * 60 * 1000);
+
+        let title: string;
+        let description: string;
+
+        if (isEmailAction) {
+          title = `Sent proposal to ${company.name}`;
+          description = `Sent detailed proposal and market analysis via email.`;
+        } else {
+          title = `Completed call with ${company.name}`;
+          description = `Had productive conversation about their interest in M&A opportunities.`;
+        }
+
+        await prisma.action.create({
+          data: {
+            sellerCompanyId: company.id,
+            actionType,
+            scheduledFor,
+            status: ActionStatus.completed,
+            title,
+            description,
+            updatedAt,
+          },
+        });
+
+        totalCompletedActions++;
+      }
+    }
   }
 
-  console.log(`✅ Created ${totalActions} actions`);
+  console.log(`✅ Created ${totalActions} pending actions`);
+  console.log(`✅ Created ${totalCompletedActions} completed actions`);
 
   console.log("✨ Seed completed successfully!");
 }

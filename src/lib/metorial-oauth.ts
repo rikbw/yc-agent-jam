@@ -26,10 +26,6 @@ const getOpenAI = () => {
   return openaiClient;
 };
 
-// Local types
-type OAuthService = 'gmail' | 'google_calendar';
-type OAuthStatus = 'pending' | 'active' | 'expired';
-
 /**
  * Creates OAuth session and returns OAuth URL for user authentication
  */
@@ -188,7 +184,7 @@ export async function runMetorialConversation(userMessage: string) {
       })),
       model: 'gpt-4o-mini',
       client: getOpenAI(),
-      maxSteps: 5
+      maxSteps: 30
     });
 
     return {

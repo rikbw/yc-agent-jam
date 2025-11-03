@@ -126,40 +126,40 @@ export function ActionCard({ action, companyData, calls }: ActionCardProps) {
   };
 
   return (
-    <div className="flex items-start gap-3 border border-purple-100 bg-purple-50/50 p-4 rounded-lg">
-      <Avatar className="size-9 shrink-0 border border-purple-200">
-        <AvatarFallback className="bg-purple-100 text-purple-700">
+    <div className="flex items-start gap-3 border bg-muted/30 p-4 rounded-lg">
+      <Avatar className="size-9 shrink-0 border border-border/60">
+        <AvatarFallback className="bg-muted/50">
           {getActionIcon(action.actionType)}
         </AvatarFallback>
       </Avatar>
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium text-purple-900">
+          <span className="text-sm font-medium">
             {action.title}
           </span>
           <Badge
-            className="rounded-full px-2 py-0.5 text-[10px] font-medium bg-purple-100 text-purple-800 border-purple-200"
+            className="rounded-full px-2 py-0.5 text-[10px] font-medium"
             variant="secondary"
           >
             {ACTION_TYPE_LABELS[action.actionType]}
           </Badge>
           {isOverdue && (
             <Badge
-              className="rounded-full px-2 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-800 border-amber-200"
+              className="rounded-full px-2 py-0.5 text-[10px] font-medium bg-orange-50 text-orange-700 border border-orange-200"
               variant="secondary"
             >
               Overdue
             </Badge>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-purple-700/70">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <Calendar className="size-3" />
             <span>{scheduledRelative}</span>
           </div>
         </div>
         {action.description && (
-          <p className="line-clamp-2 text-xs text-purple-700/60">
+          <p className="line-clamp-2 text-xs text-muted-foreground">
             {action.description}
           </p>
         )}
@@ -169,7 +169,7 @@ export function ActionCard({ action, companyData, calls }: ActionCardProps) {
             variant="outline"
             onClick={handleStartCall}
             disabled={isStartingCall}
-            className="h-7 text-xs bg-white hover:bg-purple-50 border-purple-200 text-purple-700"
+            className="h-7 text-xs"
           >
             <Phone className="size-3 mr-1" />
             {isStartingCall ? "Preparing..." : "Call Now"}
