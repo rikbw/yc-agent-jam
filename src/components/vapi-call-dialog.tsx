@@ -282,15 +282,15 @@ Owner: ${companyData.ownerBankerName}
           tools: vapiTools as any
         },
         voice: {
-          provider: "11labs",
-          voiceId: "bIHbv24MWmeRgasZH58o",
+          provider: "cartesia",
+          voiceId: "57dcab65-68ac-45a6-8480-6c4c52ec1cd1", // Kira - warm, engaging voice for sales
         },
         // Background office ambient sound
         backgroundSound: "office",
         // Maximum call duration (15 minutes)
         maxDurationSeconds: 900,
         name: `${companyData.name} Sales Call`,
-        firstMessage: `Hello! This is an AI assistant calling on behalf of ${companyData.ownerBankerName}. I'd like to discuss your company, ${companyData.name}, and explore potential opportunities. How are you today?`,
+        firstMessage: `Hi, thanks for taking my call. I'm reaching out on behalf of ${companyData.ownerBankerName}—he's a partner at our equity investments firm. He specifically asked me to connect with you because he's been following ${companyData.name} and was impressed by your market position. I was curious, when his team reached out, what caught your attention?`,
       });
     } catch (error: any) {
       console.error("Failed to start call:", error);

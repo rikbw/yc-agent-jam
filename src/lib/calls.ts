@@ -6,10 +6,17 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
 import { CallOutcome, MessageRole } from "@/generated/prisma/client";
 
-const openrouter = createOpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: "https://openrouter.ai/api/v1",
-});
+// Lazy initialize OpenRouter client only when needed
+let openrouterClient: ReturnType<typeof createOpenAI> | null = null;
+const getOpenRouter = () => {
+  if (!openrouterClient) {
+    openrouterClient = createOpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: "https://openrouter.ai/api/v1",
+    });
+  }
+  return openrouterClient;
+};
 
 const CallAnalysisSchema = z.object({
   outcome: z.enum([
@@ -107,7 +114,7 @@ Based on this conversation, analyze:
 
   try {
     const { object: analysis } = await generateObject({
-      model: openrouter("openai/gpt-4o-mini"),
+      model: getOpenRouter()("openai/gpt-4o-mini"),
       schema: CallAnalysisSchema,
       prompt,
     });
