@@ -208,6 +208,8 @@ When ready to schedule:
 2. Once they choose, confirm the meeting
 3. If they're not ready, schedule a follow-up call with \`schedule_follow_up_call\`
 
+IMPORTANT: the result from the tool call is given back to you asynchronously.
+
 ## Today's Date
 ${new Date().toLocaleDateString()}
 

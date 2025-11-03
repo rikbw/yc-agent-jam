@@ -343,13 +343,15 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
                 </div>
               </div>
 
-              <CompanyCallButton companyData={company} calls={calls} />
+              <div className="flex flex-wrap items-center gap-2">
+                <CompanyCallSection companyData={company} calls={calls} />
+                <CompanyCallButton companyData={company} calls={calls} />
+              </div>
             </div>
           </div>
 
           <div className="grid flex-1 gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
             <div className="flex min-h-[28rem] flex-col gap-6">
-              <CompanyCallSection companyData={company} calls={calls} />
               <CompanyDetailTabs
                 ownerBankerName={company.ownerBankerName}
                 lastContactRelative={lastContactRelative}
