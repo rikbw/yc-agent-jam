@@ -14,10 +14,17 @@ const SERVICE_DEPLOYMENT_MAP = {
   google_calendar: process.env.METORIAL_GCALENDAR_ID!,
 } as const;
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: 'https://openrouter.ai/api/v1',
-});
+// Lazy initialize OpenAI client only when needed
+let openaiClient: OpenAI | null = null;
+const getOpenAI = () => {
+  if (!openaiClient) {
+    openaiClient = new OpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: 'https://openrouter.ai/api/v1',
+    });
+  }
+  return openaiClient;
+};
 
 /**
  * Creates OAuth session and returns OAuth URL for user authentication
@@ -175,8 +182,8 @@ export async function runMetorialConversation(userMessage: string) {
         serverDeploymentId: s.serverDeploymentId,
         oauthSessionId: s.oauthSessionId
       })),
-      model: 'gpt-5-mini',
-      client: openai,
+      model: 'gpt-4o-mini',
+      client: getOpenAI(),
       maxSteps: 30
     });
 

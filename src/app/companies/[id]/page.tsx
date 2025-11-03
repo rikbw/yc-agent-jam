@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CompanyLogo } from "@/components/company-logo";
 import { CompanyCallButton } from "@/components/company-call-button";
+import { CompanyCallSection } from "@/components/company-call-section";
 import type { Call } from "@/types/call";
 import type { Action } from "@/types/action";
 import {
@@ -347,7 +348,8 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
           </div>
 
           <div className="grid flex-1 gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-            <div className="flex min-h-[28rem] flex-col">
+            <div className="flex min-h-[28rem] flex-col gap-6">
+              <CompanyCallSection companyData={company} calls={calls} />
               <CompanyDetailTabs
                 ownerBankerName={company.ownerBankerName}
                 lastContactRelative={lastContactRelative}
