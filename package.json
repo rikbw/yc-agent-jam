@@ -16,7 +16,9 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
+
     "db:reset": "prisma migrate reset --force"
+
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.59",

@@ -38,9 +38,9 @@ export type EmployeeRange = string;
 export const BreadcrumbSchema = z.object({
   label: z.string(),
   signal_field_name: z.string(),
-  value: z.string(),
-  display_name: z.string(),
-});
+  value: z.union([z.string(), z.any()]), // Can be string or object
+  display_name: z.union([z.string(), z.any()]), // Can be string or object
+}).passthrough();
 
 /**
  * Schema for primary phone information
@@ -128,6 +128,12 @@ export const ApolloOrganizationSchema = z.object({
   show_intent: z.boolean().optional(),
   has_intent_signal_account: z.boolean().optional(),
   intent_signal_account: IntentSignalAccountSchema.optional(),
+  // Additional fields from Organization Search
+  organization_revenue: z.number().nullable().optional(),
+  organization_revenue_printed: z.string().nullable().optional(),
+  organization_headcount_six_month_growth: z.number().nullable().optional(),
+  organization_headcount_twelve_month_growth: z.number().nullable().optional(),
+  organization_headcount_twenty_four_month_growth: z.number().nullable().optional(),
 }).passthrough(); // Allow additional fields
 
 /**
@@ -353,3 +359,36 @@ export interface ApolloApiError {
   message?: string;
   status?: number;
 }
+
+// ============================================================================
+// Bulk Organization Enrichment
+// ============================================================================
+
+/**
+ * Schema for bulk organization enrichment request
+ * 
+ * @see https://docs.apollo.io/
+ */
+export const BulkEnrichOrganizationsParamsSchema = z.object({
+  domains: z.array(z.string()).max(10).describe('Array of domains to enrich (max 10 per request)'),
+});
+
+/**
+ * Schema for bulk organization enrichment response
+ * 
+ * Apollo returns either a single organization or an array depending on input
+ */
+export const BulkEnrichOrganizationsResponseSchema = z.object({
+  organization: ApolloOrganizationSchema.optional(),
+  organizations: z.array(ApolloOrganizationSchema).optional(),
+}).passthrough();
+
+/**
+ * Request parameters for bulk organization enrichment
+ */
+export type BulkEnrichOrganizationsParams = z.infer<typeof BulkEnrichOrganizationsParamsSchema>;
+
+/**
+ * Response from bulk organization enrichment
+ */
+export type BulkEnrichOrganizationsResponse = z.infer<typeof BulkEnrichOrganizationsResponseSchema>;

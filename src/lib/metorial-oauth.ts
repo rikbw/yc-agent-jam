@@ -175,6 +175,16 @@ export async function runMetorialConversation(userMessage: string) {
       };
     }
 
+    console.log('Calling metorial.run with:', {
+      messageLength: userMessage.length,
+      oauthSessionCount: oauthSessions.length,
+      serverDeployments: oauthSessions.map(s => ({
+        serverDeploymentId: s.serverDeploymentId,
+        oauthSessionId: s.oauthSessionId.substring(0, 20) + '...',
+        service: s.service
+      }))
+    });
+
     // Use the simple .run() method which handles everything
     const result = await metorial.run({
       message: userMessage,
@@ -194,6 +204,16 @@ export async function runMetorialConversation(userMessage: string) {
     };
   } catch (error) {
     console.error('Metorial conversation error:', error);
+    
+    // Log more details about the error
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
+    }
+    
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
