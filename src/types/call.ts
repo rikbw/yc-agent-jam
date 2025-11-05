@@ -41,9 +41,9 @@ export const CALL_OUTCOME_LABELS: Record<CallOutcome, string> = {
 };
 
 export const CALL_OUTCOME_COLORS: Record<CallOutcome, string> = {
-  productive: "bg-green-100 text-green-800",
-  no_answer: "bg-gray-100 text-gray-800",
-  voicemail: "bg-blue-100 text-blue-800",
-  scheduled_meeting: "bg-purple-100 text-purple-800",
-  not_interested: "bg-red-100 text-red-800",
+  productive: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  no_answer: "bg-muted/40 text-muted-foreground border border-border",
+  voicemail: "bg-muted/40 text-muted-foreground border border-border",
+  scheduled_meeting: "bg-blue-50 text-blue-700 border border-blue-200",
+  not_interested: "bg-muted/40 text-muted-foreground border border-border",
 };

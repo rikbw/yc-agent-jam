@@ -61,7 +61,11 @@ export const columns: ColumnDef<SellerCompany>[] = [
           href={`/companies/${company.id}`}
           className="flex items-center gap-3 hover:opacity-80 transition-opacity"
         >
-          <CompanyLogo companyName={company.name} className="h-6 w-6" />
+          <CompanyLogo
+            companyName={company.name}
+            website={company.website}
+            className="h-6 w-6"
+          />
           <span className="max-w-[500px] truncate font-medium">
             {row.getValue("name")}
           </span>

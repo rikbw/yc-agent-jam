@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CompanyLogo } from "@/components/company-logo";
 import { CompanyCallButton } from "@/components/company-call-button";
+import { CompanyCallSection } from "@/components/company-call-section";
 import type { Call } from "@/types/call";
 import type { Action } from "@/types/action";
 import {
@@ -33,6 +34,8 @@ import {
 } from "@/types/seller";
 import { notFound } from "next/navigation";
 import { ExternalLink } from "lucide-react";
+import { CommentsSection } from "@/components/comments-section";
+import type { Comment } from "@/types/comment";
 
 interface CompanyDetailPageProps {
   params: Promise<{
@@ -115,6 +118,11 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
           scheduledFor: 'asc',
         },
       },
+      comments: {
+        orderBy: {
+          createdAt: 'desc',
+        },
+      },
     },
   });
 
@@ -137,6 +145,7 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
     estimatedDealSize: companyFromDb.estimatedDealSize,
     likelihoodToSell: companyFromDb.likelihoodToSell,
     website: companyFromDb.website,
+    logoUrl: companyFromDb.logoUrl,
     valuation: companyFromDb.valuation,
     createdAt: companyFromDb.createdAt,
   };
@@ -192,6 +201,16 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
     description: action.description ?? undefined,
     createdAt: action.createdAt,
     updatedAt: action.updatedAt,
+  }));
+
+  // Transform comments data
+  const comments: Comment[] = companyFromDb.comments.map((comment) => ({
+    id: comment.id,
+    sellerCompanyId: comment.sellerCompanyId,
+    authorName: comment.authorName,
+    content: comment.content,
+    createdAt: comment.createdAt,
+    updatedAt: comment.updatedAt,
   }));
 
   const recordDetailRows: { label: string; value: ReactNode }[] = [
@@ -303,18 +322,11 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
                 <div className="flex flex-wrap items-center gap-4">
                   <CompanyLogo
                     companyName={company.name}
+                    website={company.website}
                     className="h-14 w-14 rounded-full text-base"
                   />
                   <div className="flex flex-col gap-2">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <h1 className="text-3xl font-semibold tracking-tight">{company.name}</h1>
-                      <Badge
-                        className={`${DEAL_STAGE_COLORS[company.dealStage]} rounded-full px-3 py-1 text-xs font-medium`}
-                        variant="secondary"
-                      >
-                        {DEAL_STAGE_LABELS[company.dealStage]}
-                      </Badge>
-                    </div>
+                    <h1 className="text-3xl font-semibold tracking-tight">{company.name}</h1>
                     <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
                         <Avatar className="size-8 border border-border/60">
@@ -331,12 +343,15 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
                 </div>
               </div>
 
-              <CompanyCallButton companyData={company} calls={calls} />
+              <div className="flex flex-wrap items-center gap-2">
+                <CompanyCallSection companyData={company} calls={calls} />
+                <CompanyCallButton companyData={company} calls={calls} />
+              </div>
             </div>
           </div>
 
           <div className="grid flex-1 gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-            <div className="flex min-h-[28rem] flex-col">
+            <div className="flex min-h-[28rem] flex-col gap-6">
               <CompanyDetailTabs
                 ownerBankerName={company.ownerBankerName}
                 lastContactRelative={lastContactRelative}
@@ -361,7 +376,7 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
                       className="rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-2 shadow-none ring-0 ring-offset-0 data-[state=active]:border-primary"
                     >
                       Comments
-                      <span className="ml-2 text-xs text-muted-foreground">0</span>
+                      <span className="ml-2 text-xs text-muted-foreground">{comments.length}</span>
                     </TabsTrigger>
                   </TabsList>
                 </div>
@@ -444,10 +459,8 @@ export default async function CompanyDetailPage({ params }: CompanyDetailPagePro
                   </section>
                 </TabsContent>
 
-                <TabsContent value="comments" className="flex flex-1 flex-col px-6 pb-6">
-                  <div className="flex flex-1 items-center justify-center bg-muted/10 px-6 text-center text-sm text-muted-foreground">
-                    Keep teammates in the loop with comments. Mention someone to notify them instantly.
-                  </div>
+                <TabsContent value="comments" className="flex flex-1 flex-col gap-4 px-6 py-5">
+                  <CommentsSection companyId={company.id} initialComments={comments} />
                 </TabsContent>
               </Tabs>
             </div>

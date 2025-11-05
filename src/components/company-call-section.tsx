@@ -60,14 +60,10 @@ export function CompanyCallSection({ companyData, calls }: CompanyCallSectionPro
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
-
-        <Button size="sm" onClick={handleStartCall} disabled={isCreatingCall}>
-
+        <Button size="sm" variant="secondary" onClick={handleStartCall} disabled={isCreatingCall}>
           <Phone className="size-4" />
-          {isCreatingCall ? "Preparing..." : "Start Call"}
+          {isCreatingCall ? "Preparing..." : "Web Call"}
         </Button>
-      </div>
 
       {callId && (
         <VapiCallDialog

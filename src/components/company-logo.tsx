@@ -1,13 +1,21 @@
+"use client";
+
 import { getCompanyInitials } from "@/lib/utils/get-company-initials";
 import { cn } from "@/lib/utils";
+import { getLogoDevUrl } from "@/lib/logodev";
+import Image from "next/image";
+import { useState } from "react";
 
 interface CompanyLogoProps {
   companyName: string;
+  website?: string | null;
   className?: string;
 }
 
-export function CompanyLogo({ companyName, className }: CompanyLogoProps) {
+export function CompanyLogo({ companyName, website, className }: CompanyLogoProps) {
+  const [imageError, setImageError] = useState(false);
   const initials = getCompanyInitials(companyName);
+  const logoUrl = getLogoDevUrl(website);
 
   // Generate a consistent soft gradient based on the company name
   const getGradientFromName = (name: string) => {
@@ -47,6 +55,23 @@ export function CompanyLogo({ companyName, className }: CompanyLogoProps) {
 
   const { gradient, textColor } = getGradientFromName(companyName);
 
+  // If we have a logo URL and no error, show the image
+  if (logoUrl && !imageError) {
+    return (
+      <div className={cn("flex items-center justify-center rounded-lg overflow-hidden bg-white", className)}>
+        <Image
+          src={logoUrl}
+          alt={`${companyName} logo`}
+          width={200}
+          height={200}
+          className="w-full h-full object-contain p-1"
+          onError={() => setImageError(true)}
+        />
+      </div>
+    );
+  }
+
+  // Fallback to initials
   return (
     <div
       className={cn(

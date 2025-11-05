@@ -34,8 +34,8 @@ export default async function SettingsPage() {
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+            <p className="text-sm text-muted-foreground">
               Manage your integrations and preferences
             </p>
           </div>
